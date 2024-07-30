@@ -1,0 +1,52 @@
+{
+  "root": true,
+  "env": { "browser": true, "es2020": true },
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:react-hooks/recommended",
+    "airbnb",
+    "airbnb-typescript",
+    "prettier"
+  ],
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "project": "./tsconfig.json"
+  },
+  "plugins": ["react-refresh"],
+  "rules": {
+    "react-refresh/only-export-components": [
+      "warn",
+      { "allowConstantExport": true }
+    ],
+    "@typescript-eslint/no-unused-expressions": [
+      "error",
+      { "allowShortCircuit": true }
+    ],
+    "no-debugger": "warn",
+    "@typescript-eslint/no-empty-interface": "warn",
+    "@typescript-eslint/no-explicit-any": "warn",
+    "jsx-a11y/click-events-have-key-events": "off",
+    "jsx-a11y/no-static-element-interactions": "off",
+    "react/require-default-props": "off",
+    "consistent-return": "off",
+    "no-underscore-dangle": "off",
+    "no-unused-vars": "off",
+    "no-extra-boolean-cast": "off",
+    "@typescript-eslint/no-unused-vars": "off",
+    "import/no-unresolved": "off",
+    "import/prefer-default-export": "off",
+    "no-param-reassign": "off",
+    "class-methods-use-this": "off",
+    "react/jsx-props-no-spreading": "warn",
+    "react/react-in-jsx-scope": "off",
+    "import/extensions": "off",
+    "react/function-component-definition": [
+      "warn",
+      {
+        "namedComponents": "arrow-function"
+      }
+    ],
+    "arrow-body-style": "off"
+  }
+}

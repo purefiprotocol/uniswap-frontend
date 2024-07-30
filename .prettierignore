@@ -1,0 +1,14 @@
+tsconfig.json
+tsconfig.node.json
+vite.config.ts
+
+/node_modules
+/public
+/coverage
+/dist
+
+/src/assets
+/src/**/*.sass
+/src/modules/viewer/assets
+/src/modules/shared/assets
+/src/assets
