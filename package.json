@@ -1,8 +1,16 @@
 {
-  "name": "uniswap-frontend",
+  "name": "compliant-dex",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.1",
   "type": "module",
+  "keywords": [
+    "purefi",
+    "uniswap",
+    "v4",
+    "dex",
+    "compliance",
+    "hook"
+  ],
   "scripts": {
     "start": "vite",
     "build": "tsc && vite build",
