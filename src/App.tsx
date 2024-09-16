@@ -7,7 +7,7 @@ import { PureFI } from '@purefi/verifier-sdk';
 import { ConfigProvider } from 'antd';
 import { wagmiConfig } from './config';
 import { Layout } from './components';
-import { Home, NotFound } from './pages';
+import { Home, Liquidity, NotFound } from './pages';
 
 const queryClient = new QueryClient();
 
@@ -60,6 +60,7 @@ const App: FC = () => {
                 <Routes>
                   <Route path="/" element={<Layout />}>
                     <Route index element={<Home />} />
+                    <Route path="/liquidity" element={<Liquidity />} />
                     <Route path="*" element={<NotFound />} />
                   </Route>
                 </Routes>
