@@ -1,0 +1,37 @@
+@import '@/styles/variables';
+
+.modal {
+  :global(.ant-modal-close-x) {
+    color: $white;
+  }
+
+  :global(.ant-modal-title) {
+    margin-bottom: 20px;
+    font-size: 18px;
+  }
+
+  :global(.ant-modal-content) {
+    border: 1px solid gray;
+  }
+}
+
+.button {
+  background-color: #fc72ff;
+  border-color: transparent;
+  font-size: 18px;
+  font-weight: 500;
+  height: 50px;
+  margin-top: 10px;
+
+  &:hover {
+    background-color: #db48dd !important;
+    color: #ffffff !important;
+    border-color: transparent !important;
+  }
+
+  &:disabled {
+    color: #ffffff !important;
+    border-color: gray !important;
+    background: gray !important;
+  }
+}
