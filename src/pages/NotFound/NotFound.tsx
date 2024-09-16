@@ -1,12 +1,16 @@
 import { FC } from 'react';
 import { Link } from 'react-router-dom';
 
+import styles from './NotFound.module.scss';
+
 const NotFound: FC = () => {
   return (
-    <div>
-      <h2>Not found</h2>
-      <div>
-        <Link to="/">Go to the home page</Link>
+    <div className={styles.notFound}>
+      <div className={styles.wrapper}>
+        <h2>Not found</h2>
+        <div>
+          <Link to="/">Home Page</Link>
+        </div>
       </div>
     </div>
   );
