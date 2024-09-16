@@ -6,6 +6,8 @@ import PoolManager from '@/abi/PoolManager.json';
 import PoolManagerViewer from '@/abi/PoolManagerViewer.json';
 import PurefiSwapRouter from '@/abi/PurefiSwapRouter.json';
 import Quoter from '@/abi/Quoter.json';
+import PureFiModifyLiquidityRouter from '@/abi/PureFiModifyLiquidityRouter.json';
+import LiquidityHelper from '@/abi/LiquidityHelper.json';
 import MockToken from '@/abi/MockToken.json';
 
 import usdcSrc from '@/assets/icons/usdc.png';
@@ -15,6 +17,14 @@ const polygonAmoyConfig: Config = {
   swapRouter: {
     address: '0x62D340AA89e3953063cF3884693d23cdbb5105cd',
     abi: PurefiSwapRouter.abi,
+  },
+  liquidityRouter: {
+    address: '0x4c2840fFb488CF3651ed5967FFb6C90e3bFbffc2',
+    abi: PureFiModifyLiquidityRouter.abi,
+  },
+  liquidityHelper: {
+    address: '0x2A08567d2930EfFb2ea318d40e09Ce8d8178db6e',
+    abi: LiquidityHelper.abi,
   },
   poolManager: {
     address: '0x2F81C3A3BbB6580Ca9B588Cc8Adf5590aBe7a7B7',
