@@ -1,28 +1,12 @@
 import { FC } from 'react';
-import { useAccount } from 'wagmi';
-import { ConnectButton } from '@/components';
+import { SwapCard } from '@/components';
+
+import styles from './Home.module.scss';
 
 const Home: FC = () => {
-  const account = useAccount();
-
-  console.log(account);
-
-  const renderBody = () => {
-    if (account.isConnecting) {
-      return <div>Loading...</div>;
-    }
-
-    if (account.isConnected) {
-      return <div>Swap Card</div>;
-    }
-
-    return <ConnectButton />;
-  };
-
   return (
-    <div>
-      <h2>Home</h2>
-      <div>{renderBody()}</div>
+    <div className={styles.home}>
+      <SwapCard />
     </div>
   );
 };

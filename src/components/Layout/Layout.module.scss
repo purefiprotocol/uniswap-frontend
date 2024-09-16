@@ -1,0 +1,78 @@
+@import '@/styles/variables';
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background: $black2;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: $gray3;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: $gray2;
+}
+
+.layout {
+  position: relative;
+  height: calc(100%);
+  background-color: transparent;
+}
+
+.header {
+  height: $header_height;
+  background-color: transparent;
+}
+
+.logo {
+  height: 40px;
+}
+
+.content {
+  min-height: calc(100% - $header_height - $footer_height);
+  overflow-y: auto;
+  padding: 20px 20px 0 20px;
+  background-color: transparent;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.footer {
+  background-color: transparent;
+  height: $footer_height;
+  text-align: center;
+  // position: fixed;
+  // bottom: 0;
+  // left: 0;
+  // right: 0;
+}
+
+.nav__item {
+  display: block;
+}
+
+.nav__link {
+  line-height: 24px;
+  font-size: 18px;
+  font-weight: 500;
+  color: rgb(155, 155, 155);
+  text-decoration: none;
+  padding: 8px;
+  border-radius: 8px;
+
+  &:global(.active) {
+    color: $white;
+    background-color: rgb(30, 31, 35);
+  }
+
+  &:hover {
+    color: $white;
+  }
+}

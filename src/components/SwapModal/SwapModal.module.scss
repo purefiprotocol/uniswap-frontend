@@ -1,0 +1,264 @@
+@import '@/styles/variables';
+
+.modal {
+  :global(.ant-modal-close-x) {
+    color: $white;
+  }
+
+  :global(.ant-modal-title) {
+    margin-bottom: 20px;
+    font-size: 18px;
+  }
+
+  :global(.ant-modal-content) {
+    border: 1px solid gray;
+  }
+}
+
+.steps__container {
+  margin-bottom: 20px;
+}
+
+.steps {
+  :global(.ant-steps-item.ant-steps-item-wait .ant-steps-icon) {
+    color: white;
+  }
+
+  :global(.ant-steps-item.ant-steps-item-wait .ant-steps-item-icon) {
+    background-color: gray;
+  }
+
+  :global(.ant-steps-item.ant-steps-item-finish .ant-steps-item-icon) {
+    background-color: rgb(30, 172, 30);
+  }
+  :global(
+      .ant-steps-item.ant-steps-item-finish
+        .ant-steps-item-icon
+        > .ant-steps-icon
+    ) {
+    color: white;
+  }
+
+  :global(.ant-steps-item-icon) {
+    border-color: $white !important;
+  }
+
+  // :global(.ant-steps-icon) {
+  //   color: $white !important;
+  // }
+}
+
+.purefiSteps {
+  max-width: 300px;
+  padding-bottom: 30px;
+
+  :global(.ant-steps-item.ant-steps-item-wait .ant-steps-icon) {
+    color: gray !important;
+  }
+
+  :global(.ant-steps-item.ant-steps-item-active .ant-steps-icon) {
+    color: #1677ff !important;
+  }
+
+  :global(.ant-steps-item.ant-steps-item-finish .ant-steps-icon) {
+    color: rgb(30, 172, 30) !important;
+  }
+
+  :global(.ant-steps-item.ant-steps-item-error .ant-steps-icon) {
+    color: #ff4d4f !important;
+  }
+}
+
+.theButton {
+  background-color: #fc72ff;
+  border-color: transparent;
+  font-size: 18px;
+  font-weight: 500;
+  height: 50px;
+  margin-top: 10px;
+
+  &:hover {
+    background-color: #db48dd !important;
+    color: #ffffff !important;
+    border-color: transparent !important;
+  }
+
+  &:disabled {
+    color: #ffffff !important;
+    border-color: gray !important;
+    background: gray !important;
+  }
+}
+
+.theButton2 {
+  background-color: #fa2c38;
+  border-color: transparent;
+  font-size: 18px;
+  font-weight: 500;
+  height: 50px;
+  margin-top: 10px;
+
+  &:hover {
+    background-color: #fa1824 !important;
+    color: #ffffff !important;
+    border-color: transparent !important;
+  }
+
+  &:disabled {
+    color: #ffffff !important;
+    border-color: gray !important;
+    background: gray !important;
+  }
+}
+
+.item {
+  color: $gray2;
+  margin-bottom: 6px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.white {
+  color: $white;
+}
+
+.step {
+  // width: 100%;
+}
+
+.step__body {
+  min-height: 320px;
+  padding-top: 20px;
+}
+
+.step__footer {
+  display: block;
+}
+
+.loader__container {
+  text-align: center;
+  padding-bottom: 20px;
+  padding-top: 20px;
+}
+
+.loader__message {
+  font-size: 24px;
+  margin-bottom: 5px;
+}
+
+.loader__spinner {
+  font-size: 54px;
+  color: #db48dd;
+}
+
+.loader__hint {
+  margin-top: 5px;
+  font-size: 14px;
+  color: gray;
+}
+
+.loader__success {
+  font-size: 54px;
+  color: rgb(30, 172, 30);
+}
+
+.link {
+  text-decoration: none;
+  color: #ffffff;
+
+  &:hover {
+    text-decoration: underline;
+    color: #1677ff;
+  }
+}
+
+.special {
+  margin-top: 100px;
+}
+
+.finish {
+  height: 100%;
+  text-align: center;
+  font-size: 16px;
+
+  .value {
+    margin-right: 3px;
+    font-size: 16px;
+  }
+
+  .arrow {
+    margin-right: 5px;
+    font-size: 14px;
+  }
+
+  .symbol {
+    margin-right: 5px;
+    font-size: 16px;
+    font-weight: 500;
+  }
+}
+
+.textarea {
+  background-color: #1b1b1b;
+  border: 1px solid gray;
+  border-radius: 8px;
+  color: gray;
+  width: 100%;
+  padding: 10px;
+  font-size: 12px;
+  pointer-events: none;
+  white-space: pre;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  padding-right: 20px;
+}
+
+.swapType {
+  color: gray;
+  margin-top: 10px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.details {
+  font-size: 16px;
+
+  :global(.ant-collapse-expand-icon) {
+    transform: rotate(-270deg);
+    padding-inline: 0 !important;
+  }
+
+  :global(.ant-collapse-item-active .ant-collapse-expand-icon) {
+    transform: rotate(-180deg);
+  }
+
+  :global(.ant-collapse-content-box) {
+    padding-top: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  :global(.ant-collapse-header) {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+}
+
+.allowance {
+  background: #131313;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+
+  .item__title {
+    color: #ff4d4f;
+  }
+
+  &.allowance__ok {
+    .item__title {
+      color: rgb(30, 172, 30);
+    }
+  }
+}
