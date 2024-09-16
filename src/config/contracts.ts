@@ -9,6 +9,7 @@ import Quoter from '@/abi/Quoter.json';
 import PureFiModifyLiquidityRouter from '@/abi/PureFiModifyLiquidityRouter.json';
 import LiquidityHelper from '@/abi/LiquidityHelper.json';
 import MockToken from '@/abi/MockToken.json';
+import FaucetAbi from '@/abi/FaucetAbi.json';
 
 import usdcSrc from '@/assets/icons/usdc.png';
 import usdtSrc from '@/assets/icons/usdt.png';
@@ -53,6 +54,11 @@ const polygonAmoyConfig: Config = {
         symbol: 'USDC',
         decimals: 6,
         icon: usdcSrc,
+        faucet: {
+          address: '0xDFCc24Bf7f18489C163193aA92Af5a6b0C254Bee',
+          abi: FaucetAbi.abi,
+          functionName: 'giveMeTokens',
+        },
       },
       token1: {
         address: '0xb97CBF42B59Ab198c76876C380D47b6734f9fe2B',
@@ -60,9 +66,18 @@ const polygonAmoyConfig: Config = {
         symbol: 'USDT',
         decimals: 6,
         icon: usdtSrc,
+        faucet: {
+          address: '0xd2392701faaEf592d3c45442994dD1C6ebC2664d',
+          abi: FaucetAbi.abi,
+          functionName: 'giveMeTokens',
+        },
       },
     },
   ],
+  faucet: {
+    symbol: 'POL',
+    url: 'https://faucet.polygon.technology',
+  },
 };
 
 export const DEFAULT_CONFIG = polygonAmoyConfig;
