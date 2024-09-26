@@ -1,4 +1,5 @@
 import { FC, useEffect, useState } from 'react';
+import { NavLink } from 'react-router-dom';
 import { Button, Collapse, Flex, Modal, StepProps, Steps } from 'antd';
 import { useAccount } from 'wagmi';
 import {
@@ -18,7 +19,7 @@ import {
   PureFIErrorCodes,
   PureFIPayload,
   SignatureType,
-} from '@purefi/verifier-sdk';
+} from '@purefi/kyc-sdk';
 import {
   ArrowRightOutlined,
   CheckCircleOutlined,
@@ -477,15 +478,22 @@ const SwapModal: FC<SwapModalProps> = (props) => {
 
       if (theError.code === PureFIErrorCodes.FORBIDDEN) {
         const toastContent = (
-          <DashboardLink
-            href="https://stage.dashboard.purefi.io/kyc"
-            message={theError.message}
-            title="Dashboard"
-          />
+          <NavLink
+            to="/kyc"
+            style={{
+              textDecoration: 'none',
+              paddingBottom: '5px',
+              borderBottom: '1px solid',
+              color: 'white',
+            }}
+          >
+            {theError.message}
+          </NavLink>
         );
 
         toast.warn(toastContent, {
           autoClose: false,
+          closeOnClick: true,
         });
       } else {
         toast.error(theError.message);
