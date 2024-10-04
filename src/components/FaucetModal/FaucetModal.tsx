@@ -1,35 +1,10 @@
-import { FC, useEffect, useMemo, useState } from 'react';
-import { Button, Collapse, Flex, Modal, StepProps, Steps } from 'antd';
+import { FC, useMemo, useState } from 'react';
+import { Button, Flex, Modal, StepProps, Steps } from 'antd';
 import { useAccount } from 'wagmi';
-import {
-  BaseError,
-  bytesToHex,
-  createPublicClient,
-  createWalletClient,
-  custom,
-  erc20Abi,
-  formatUnits,
-  http,
-  parseUnits,
-  toBytes,
-} from 'viem';
+import { createPublicClient, createWalletClient, custom, http } from 'viem';
 import { toast } from 'react-toastify';
-import {
-  PureFI,
-  PureFIError,
-  PureFIErrorCodes,
-  PureFIPayload,
-  SignatureType,
-} from '@purefi/verifier-sdk';
-import {
-  CheckCircleOutlined,
-  ExportOutlined,
-  LoadingOutlined,
-  PlusOutlined,
-  SignatureOutlined,
-  SolutionOutlined,
-} from '@ant-design/icons';
-import classNames from 'classnames';
+
+import { ExportOutlined } from '@ant-design/icons';
 
 import { useChainModal } from '@rainbow-me/rainbowkit';
 import { TokenConfig } from '@/models';

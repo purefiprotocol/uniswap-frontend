@@ -3,11 +3,12 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { WagmiProvider } from 'wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit';
-import { PureFI } from '@purefi/verifier-sdk';
+import { PureFI, KycWidget } from '@purefi/kyc-sdk';
+import { toast } from 'react-toastify';
 import { ConfigProvider } from 'antd';
 import { wagmiConfig } from './config';
 import { Layout } from './components';
-import { Home, Liquidity, NotFound } from './pages';
+import { Home, Kyc, Liquidity, NotFound } from './pages';
 
 const queryClient = new QueryClient();
 
@@ -43,13 +44,19 @@ const theme = {
 const App: FC = () => {
   useEffect(() => {
     PureFI.setIssuerUrl('https://stage.issuer.app.purefi.io');
+    KycWidget.setConfig({
+      onSuccess: toast.success,
+      onWarning: toast.warn,
+      onError: toast.error,
+      onInfo: toast.info,
+    });
   }, []);
 
   return (
     <React.StrictMode>
       <ConfigProvider theme={theme}>
-        <WagmiProvider config={wagmiConfig}>
-          <QueryClientProvider client={queryClient}>
+        <QueryClientProvider client={queryClient}>
+          <WagmiProvider config={wagmiConfig}>
             <RainbowKitProvider
               theme={darkTheme({
                 accentColor: '#fc72ff',
@@ -61,13 +68,14 @@ const App: FC = () => {
                   <Route path="/" element={<Layout />}>
                     <Route index element={<Home />} />
                     <Route path="/liquidity" element={<Liquidity />} />
+                    <Route path="/kyc" element={<Kyc />} />
                     <Route path="*" element={<NotFound />} />
                   </Route>
                 </Routes>
               </BrowserRouter>
             </RainbowKitProvider>
-          </QueryClientProvider>
-        </WagmiProvider>
+          </WagmiProvider>
+        </QueryClientProvider>
       </ConfigProvider>
     </React.StrictMode>
   );
