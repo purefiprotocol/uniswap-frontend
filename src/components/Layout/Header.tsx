@@ -39,6 +39,11 @@ const Navbar: FC = () => {
               </NavLink>
             </div>
             <div className={styles.nav__item}>
+              <NavLink className={styles.nav__link} to="/kyc">
+                KYC
+              </NavLink>
+            </div>
+            <div className={styles.nav__item}>
               <button
                 className={styles.nav__btn}
                 type="button"
