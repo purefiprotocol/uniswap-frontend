@@ -1,8 +1,7 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable jsx-a11y/control-has-associated-label */
 import { FC, useState, useEffect, useMemo } from 'react';
-import { useAccount } from 'wagmi';
-import { useChainModal, useConnectModal } from '@rainbow-me/rainbowkit';
+import { useAccount, useSwitchChain } from 'wagmi';
 
 import {
   createPublicClient,
@@ -29,7 +28,7 @@ import {
 } from '@ant-design/icons';
 import classNames from 'classnames';
 
-import { useLiquidityHelper, useTokenBalance } from '@/hooks';
+import { useConnectModal, useLiquidityHelper, useTokenBalance } from '@/hooks';
 import { DEFAULT_CHAIN, getConfig } from '@/config';
 import {
   DirectionEnum,
@@ -70,12 +69,12 @@ const SwapCard: FC = () => {
 
   const publicClientConfig = {
     chain: isReady ? account.chain : DEFAULT_CHAIN,
-    transport: isReady ? custom(window.ethereum!) : http(),
+    transport: isReady ? custom((window as any).ethereum!) : http(),
   };
 
   const publicClient = createPublicClient(publicClientConfig);
 
-  const { openChainModal } = useChainModal();
+  const { switchChain } = useSwitchChain();
   const { openConnectModal } = useConnectModal();
 
   const theConfig = useMemo(
@@ -172,7 +171,7 @@ const SwapCard: FC = () => {
   };
 
   const switchChainHandler = () => {
-    openChainModal?.();
+    switchChain?.({ chainId: DEFAULT_CHAIN.id });
   };
 
   useEffect(() => {

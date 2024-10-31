@@ -124,7 +124,7 @@ const SwapModal: FC<SwapModalProps> = (props) => {
 
   const publicClientConfig = {
     chain: isReady ? account.chain : DEFAULT_CHAIN,
-    transport: isReady ? custom(window.ethereum!) : http(),
+    transport: isReady ? custom((window as any).ethereum!) : http(),
   };
 
   const publicClient = createPublicClient(publicClientConfig);
@@ -216,7 +216,7 @@ const SwapModal: FC<SwapModalProps> = (props) => {
   const getAllowance = async () => {
     const walletClient = createWalletClient({
       chain: account.chain!,
-      transport: custom(window.ethereum!),
+      transport: custom((window as any).ethereum!),
     });
 
     const [address] = await walletClient.getAddresses();
@@ -282,7 +282,7 @@ const SwapModal: FC<SwapModalProps> = (props) => {
     try {
       const walletClient = createWalletClient({
         chain: account.chain!,
-        transport: custom(window.ethereum!),
+        transport: custom((window as any).ethereum!),
       });
 
       setApproveLoading(true);
@@ -384,7 +384,7 @@ const SwapModal: FC<SwapModalProps> = (props) => {
     try {
       const walletClient = createWalletClient({
         chain: account.chain!,
-        transport: custom(window.ethereum!),
+        transport: custom((window as any).ethereum!),
       });
 
       setStep21Loading(true);
@@ -516,7 +516,7 @@ const SwapModal: FC<SwapModalProps> = (props) => {
     try {
       const walletClient = createWalletClient({
         chain: account.chain!,
-        transport: custom(window.ethereum!),
+        transport: custom((window as any).ethereum!),
       });
 
       setStep3Loading(true);
@@ -638,7 +638,7 @@ const SwapModal: FC<SwapModalProps> = (props) => {
     try {
       const walletClient = createWalletClient({
         chain: account.chain!,
-        transport: custom(window.ethereum!),
+        transport: custom((window as any).ethereum!),
       });
 
       setStep4Loading(true);
