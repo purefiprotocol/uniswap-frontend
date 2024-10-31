@@ -16,7 +16,7 @@
 }
 
 .button {
-  background-color: #fc72ff;
+  background-color: $pink;
   border-color: transparent;
   font-size: 18px;
   font-weight: 500;
@@ -24,13 +24,13 @@
   margin-top: 10px;
 
   &:hover {
-    background-color: #db48dd !important;
-    color: #ffffff !important;
+    background-color: $pink2 !important;
+    color: $white !important;
     border-color: transparent !important;
   }
 
   &:disabled {
-    color: #ffffff !important;
+    color: $white !important;
     border-color: gray !important;
     background: gray !important;
   }

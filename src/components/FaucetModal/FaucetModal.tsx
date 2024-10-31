@@ -1,12 +1,11 @@
 import { FC, useMemo, useState } from 'react';
 import { Button, Flex, Modal, StepProps, Steps } from 'antd';
-import { useAccount } from 'wagmi';
+import { useAccount, useSwitchChain } from 'wagmi';
 import { createPublicClient, createWalletClient, custom, http } from 'viem';
 import { toast } from 'react-toastify';
 
 import { ExportOutlined } from '@ant-design/icons';
 
-import { useChainModal } from '@rainbow-me/rainbowkit';
 import { TokenConfig } from '@/models';
 import { DEFAULT_CHAIN, getConfig } from '@/config';
 
@@ -33,7 +32,7 @@ const FaucetModal: FC<FaucetModalProps> = (props) => {
 
   const account = useAccount();
 
-  const { openChainModal } = useChainModal();
+  const { switchChain } = useSwitchChain();
 
   const isWalletConnected = account.isConnected;
   const isChainSupported = checkIfChainSupported(account.chainId);
@@ -41,7 +40,7 @@ const FaucetModal: FC<FaucetModalProps> = (props) => {
 
   const publicClientConfig = {
     chain: isReady ? account.chain : DEFAULT_CHAIN,
-    transport: isReady ? custom(window.ethereum!) : http(),
+    transport: isReady ? custom((window as any).ethereum!) : http(),
   };
 
   const publicClient = createPublicClient(publicClientConfig);
@@ -74,7 +73,7 @@ const FaucetModal: FC<FaucetModalProps> = (props) => {
   };
 
   const switchChainHandler = () => {
-    openChainModal?.();
+    switchChain?.({ chainId: DEFAULT_CHAIN.id });
   };
 
   const faucetHandler = async (token: TokenConfig) => {
@@ -92,7 +91,7 @@ const FaucetModal: FC<FaucetModalProps> = (props) => {
 
         const walletClient = createWalletClient({
           chain: account.chain!,
-          transport: custom(window.ethereum!),
+          transport: custom((window as any).ethereum!),
         });
 
         const [address] = await walletClient.getAddresses();

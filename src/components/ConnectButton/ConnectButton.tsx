@@ -1,10 +1,9 @@
 import { FC } from 'react';
-import { ConnectButton as RainbowConnectButton } from '@rainbow-me/rainbowkit';
 
 const ConnectButton: FC = () => {
   return (
     <div>
-      <RainbowConnectButton />
+      <w3m-button />
     </div>
   );
 };

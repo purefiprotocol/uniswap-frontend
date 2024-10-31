@@ -1,17 +1,21 @@
-import { getDefaultConfig } from '@rainbow-me/rainbowkit';
-import { HttpTransport } from 'viem';
-import { http } from 'wagmi';
+import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
+
 import { CHAINS } from './chains';
 
-const transports: Record<number, HttpTransport> = {};
+const PROJECT_ID = import.meta.env.VITE_WALLET_CONNECT_PROJECT_ID;
 
-CHAINS.forEach((chain) => {
-  transports[chain.id] = http();
+const wagmiMetadata = {
+  name: 'PureFi | Uniswap',
+  description: 'PureFi | Uniswap',
+  url: 'https://stage.dex.purefi.io',
+  icons: [
+    'https://user-images.githubusercontent.com/23620645/136548302-6bf7f6e0-8236-44bf-b75a-9c067e9347da.png',
+  ],
+};
+
+const wagmiAdapter = new WagmiAdapter({
+  networks: CHAINS,
+  projectId: PROJECT_ID,
 });
 
-export const wagmiConfig = getDefaultConfig({
-  appName: 'PureFi | Uniswap',
-  projectId: import.meta.env.VITE_WALLET_CONNECT_PROJECT_ID,
-  chains: CHAINS,
-  transports,
-});
+export { wagmiAdapter, wagmiMetadata, PROJECT_ID };

@@ -70,7 +70,7 @@
 }
 
 .theButton {
-  background-color: #fc72ff;
+  background-color: $pink;
   border-color: transparent;
   font-size: 18px;
   font-weight: 500;
@@ -78,13 +78,13 @@
   margin-top: 10px;
 
   &:hover {
-    background-color: #db48dd !important;
-    color: #ffffff !important;
+    background-color: $pink2 !important;
+    color: $white !important;
     border-color: transparent !important;
   }
 
   &:disabled {
-    color: #ffffff !important;
+    color: $white !important;
     border-color: gray !important;
     background: gray !important;
   }
@@ -100,12 +100,12 @@
 
   &:hover {
     background-color: #fa1824 !important;
-    color: #ffffff !important;
+    color: $white !important;
     border-color: transparent !important;
   }
 
   &:disabled {
-    color: #ffffff !important;
+    color: $white !important;
     border-color: gray !important;
     background: gray !important;
   }
@@ -150,7 +150,7 @@
 
 .loader__spinner {
   font-size: 54px;
-  color: #db48dd;
+  color: $pink2;
 }
 
 .loader__hint {
@@ -166,7 +166,7 @@
 
 .link {
   text-decoration: none;
-  color: #ffffff;
+  color: $white;
 
   &:hover {
     text-decoration: underline;
@@ -247,7 +247,7 @@
 }
 
 .allowance {
-  background: #131313;
+  background: $black3;
   padding: 12px;
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.07);

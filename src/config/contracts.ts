@@ -75,7 +75,7 @@ const polygonAmoyConfig: Config = {
     },
   ],
   faucet: {
-    symbol: 'POL',
+    symbol: 'POL (MATIC)',
     url: 'https://faucet.polygon.technology',
   },
 };

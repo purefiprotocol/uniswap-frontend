@@ -1,14 +1,22 @@
 import React, { FC, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { createAppKit } from '@reown/appkit/react';
 import { WagmiProvider } from 'wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit';
 import { PureFI, KycWidget } from '@purefi/kyc-sdk';
 import { toast } from 'react-toastify';
 import { ConfigProvider } from 'antd';
-import { wagmiConfig } from './config';
+import { polygonAmoy } from 'viem/chains';
+import {
+  wagmiAdapter,
+  PROJECT_ID,
+  wagmiMetadata,
+  CHAINS,
+  DEFAULT_CHAIN,
+} from './config';
 import { Layout } from './components';
 import { Home, Kyc, Liquidity, NotFound } from './pages';
+import polygonSrc from './assets/icons/polygon.webp';
 
 const queryClient = new QueryClient();
 
@@ -34,12 +42,38 @@ const theme = {
       headerBg: '#1e1f23',
     },
     Steps: {
-      colorText: 'white',
-      colorTextDescription: 'white',
+      colorText: '#ffffff',
+      colorTextDescription: '#ffffff',
       colorSplit: 'gray',
     },
   },
 };
+
+createAppKit({
+  adapters: [wagmiAdapter],
+  networks: CHAINS,
+  defaultNetwork: DEFAULT_CHAIN,
+  projectId: PROJECT_ID,
+  metadata: wagmiMetadata,
+  allowUnsupportedChain: false,
+  themeMode: 'dark',
+  themeVariables: {
+    '--w3m-accent': '#fc72ff',
+  },
+  chainImages: {
+    [polygonAmoy.id]: polygonSrc,
+  },
+  termsConditionsUrl: 'https://stage.dashboard.purefi.io/terms.pdf',
+  allWallets: 'SHOW',
+  features: {
+    swaps: false,
+    onramp: false,
+    email: false,
+    socials: false,
+    emailShowWallets: false,
+    analytics: true,
+  },
+});
 
 const App: FC = () => {
   useEffect(() => {
@@ -55,27 +89,20 @@ const App: FC = () => {
   return (
     <React.StrictMode>
       <ConfigProvider theme={theme}>
-        <QueryClientProvider client={queryClient}>
-          <WagmiProvider config={wagmiConfig}>
-            <RainbowKitProvider
-              theme={darkTheme({
-                accentColor: '#fc72ff',
-                borderRadius: 'medium',
-              })}
-            >
-              <BrowserRouter>
-                <Routes>
-                  <Route path="/" element={<Layout />}>
-                    <Route index element={<Home />} />
-                    <Route path="/liquidity" element={<Liquidity />} />
-                    <Route path="/kyc" element={<Kyc />} />
-                    <Route path="*" element={<NotFound />} />
-                  </Route>
-                </Routes>
-              </BrowserRouter>
-            </RainbowKitProvider>
-          </WagmiProvider>
-        </QueryClientProvider>
+        <WagmiProvider config={wagmiAdapter.wagmiConfig}>
+          <QueryClientProvider client={queryClient}>
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Layout />}>
+                  <Route index element={<Home />} />
+                  <Route path="/liquidity" element={<Liquidity />} />
+                  <Route path="/kyc" element={<Kyc />} />
+                  <Route path="*" element={<NotFound />} />
+                </Route>
+              </Routes>
+            </BrowserRouter>
+          </QueryClientProvider>
+        </WagmiProvider>
       </ConfigProvider>
     </React.StrictMode>
   );
