@@ -43,7 +43,7 @@
   transform: rotate(90deg);
 
   &:hover {
-    color: #ffffff !important;
+    color: $white !important;
     border-color: gray !important;
     background: #1b1b1b !important;
   }
@@ -54,20 +54,20 @@
 }
 
 .swapButton {
-  background-color: #fc72ff;
+  background-color: $pink;
   border-color: transparent;
   font-size: 18px;
   font-weight: 500;
   height: 50px;
 
   &:hover {
-    background-color: #db48dd !important;
-    color: #ffffff !important;
+    background-color: $pink2 !important;
+    color: $white !important;
     border-color: transparent !important;
   }
 
   &:disabled {
-    color: #ffffff !important;
+    color: $white !important;
     border-color: gray !important;
     background: gray !important;
   }
@@ -87,7 +87,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #131313;
+  background-color: $black3;
   border-radius: 18px;
   padding: 4px;
   border: 1px solid rgba(255, 255, 255, 0.07);
@@ -182,7 +182,7 @@
 
   :global(.ant-radio-button-wrapper) {
     padding-inline: 10px;
-    background-color: #131313;
+    background-color: $black3;
     font-size: 12px;
   }
 
@@ -200,7 +200,7 @@
   :global(.ant-radio-button-wrapper.ant-radio-button-wrapper-checked):hover {
     background-color: $black2;
     border-color: gray;
-    color: #ffffff;
+    color: $white;
   }
 }
 
