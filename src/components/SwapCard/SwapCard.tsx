@@ -1,7 +1,6 @@
 /* eslint-disable no-nested-ternary */
 import { FC, useState, useEffect, useMemo } from 'react';
-import { useAccount } from 'wagmi';
-import { useChainModal, useConnectModal } from '@rainbow-me/rainbowkit';
+import { useAccount, useSwitchChain } from 'wagmi';
 import { useDebouncedCallback } from 'use-debounce';
 import {
   createPublicClient,
@@ -29,7 +28,7 @@ import {
 } from 'antd';
 import { QuestionCircleOutlined, SwapOutlined } from '@ant-design/icons';
 
-import { useTokenBalance, useQuoter } from '@/hooks';
+import { useConnectModal, useTokenBalance, useQuoter } from '@/hooks';
 import { DEFAULT_CHAIN, getConfig } from '@/config';
 import { Slot0, SwapTypeEnum, TokenConfig } from '@/models';
 import {
@@ -63,12 +62,12 @@ const SwapCard: FC = () => {
 
   const publicClientConfig = {
     chain: isReady ? account.chain : DEFAULT_CHAIN,
-    transport: isReady ? custom(window.ethereum!) : http(),
+    transport: isReady ? custom((window as any).ethereum!) : http(),
   };
 
   const publicClient = createPublicClient(publicClientConfig);
 
-  const { openChainModal } = useChainModal();
+  const { switchChain } = useSwitchChain();
   const { openConnectModal } = useConnectModal();
 
   const theConfig = useMemo(
@@ -136,7 +135,7 @@ const SwapCard: FC = () => {
   };
 
   const switchChainHandler = () => {
-    openChainModal?.();
+    switchChain?.({ chainId: DEFAULT_CHAIN.id });
   };
 
   const maxHandler = () => {
