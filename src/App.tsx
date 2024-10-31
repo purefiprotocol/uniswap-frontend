@@ -42,8 +42,8 @@ const theme = {
       headerBg: '#1e1f23',
     },
     Steps: {
-      colorText: 'white',
-      colorTextDescription: 'white',
+      colorText: '#ffffff',
+      colorTextDescription: '#ffffff',
       colorSplit: 'gray',
     },
   },
