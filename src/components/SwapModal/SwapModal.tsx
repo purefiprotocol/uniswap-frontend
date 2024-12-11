@@ -36,7 +36,12 @@ import {
   Slot0,
   SwapTypeEnum,
 } from '@/models';
-import { checkIfChainSupported, getTransactionLink, sleep } from '@/utils';
+import {
+  calculateDelta,
+  checkIfChainSupported,
+  getTransactionLink,
+  sleep,
+} from '@/utils';
 
 import { AutoHeight } from '../AutoHeight';
 import { DashboardLink, TxnLink } from '../TxnLink';
@@ -544,13 +549,10 @@ const SwapModal: FC<SwapModalProps> = (props) => {
 
       const totalFee = slot0.swapFee + slot0.protocolFee;
 
-      const MIN_PRICE_LIMIT =
-        slot0.sqrtPriceX96 -
-        (BigInt(slippage) * slot0.sqrtPriceX96) / BigInt(100);
+      const delta = calculateDelta(slot0.sqrtPriceX96, slippage);
 
-      const MAX_PRICE_LIMIT =
-        slot0.sqrtPriceX96 +
-        (BigInt(slippage) * slot0.sqrtPriceX96) / BigInt(100);
+      const MIN_PRICE_LIMIT = slot0.sqrtPriceX96 - delta;
+      const MAX_PRICE_LIMIT = slot0.sqrtPriceX96 + delta;
 
       const sqrtPriceLimitX96 = zeroForOne ? MIN_PRICE_LIMIT : MAX_PRICE_LIMIT;
 
@@ -663,12 +665,10 @@ const SwapModal: FC<SwapModalProps> = (props) => {
       const zeroForOne =
         token0.address.toLowerCase() === inToken.address.toLowerCase();
 
-      const MIN_PRICE_LIMIT =
-        slot0.sqrtPriceX96 -
-        (BigInt(slippage) * slot0.sqrtPriceX96) / BigInt(100);
-      const MAX_PRICE_LIMIT =
-        slot0.sqrtPriceX96 +
-        (BigInt(slippage) * slot0.sqrtPriceX96) / BigInt(100);
+      const delta = calculateDelta(slot0.sqrtPriceX96, slippage);
+
+      const MIN_PRICE_LIMIT = slot0.sqrtPriceX96 - delta;
+      const MAX_PRICE_LIMIT = slot0.sqrtPriceX96 + delta;
 
       const sqrtPriceLimitX96 = zeroForOne ? MIN_PRICE_LIMIT : MAX_PRICE_LIMIT;
 

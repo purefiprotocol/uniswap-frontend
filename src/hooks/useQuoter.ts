@@ -7,7 +7,7 @@ import {
   SwapTypeEnum,
   TokenConfig,
 } from '@/models';
-import { sortTokens } from '@/utils';
+import { calculateDelta, sortTokens } from '@/utils';
 
 interface QuoterParams {
   publicClient: ReturnType<typeof createPublicClient>;
@@ -61,7 +61,7 @@ const useQuoter = (quoterParams: QuoterParams) => {
 
       const exactAmount = parseUnits(value, token.decimals);
 
-      const delta = (BigInt(slippage) * slot0.sqrtPriceX96) / BigInt(100);
+      const delta = calculateDelta(slot0.sqrtPriceX96, slippage);
 
       const MIN_PRICE_LIMIT = slot0.sqrtPriceX96 - delta;
       const MAX_PRICE_LIMIT = slot0.sqrtPriceX96 + delta;
