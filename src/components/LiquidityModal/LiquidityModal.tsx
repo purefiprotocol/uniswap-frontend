@@ -1,6 +1,14 @@
 import { FC, useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Button, Collapse, Flex, Modal, StepProps, Steps } from 'antd';
+import {
+  Button,
+  Collapse,
+  Flex,
+  Modal,
+  StepProps,
+  Steps,
+  Typography,
+} from 'antd';
 import { useAccount } from 'wagmi';
 import {
   BaseError,
@@ -11,6 +19,7 @@ import {
   erc20Abi,
   formatUnits,
   http,
+  maxUint256,
   parseUnits,
   toBytes,
 } from 'viem';
@@ -226,14 +235,16 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
 
     const [address] = await walletClient.getAddresses();
 
-    await sleep(100);
-
-    const allowance = await publicClient.readContract({
+    const allowancePromise = publicClient.readContract({
       address: leftToken.address,
       abi: erc20Abi,
       functionName: 'allowance',
       args: [address, router.address],
     });
+
+    const sleepPromise = sleep(500);
+
+    const [allowance] = await Promise.all([allowancePromise, sleepPromise]);
 
     return allowance;
   };
@@ -246,14 +257,16 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
 
     const [address] = await walletClient.getAddresses();
 
-    await sleep(100);
-
-    const allowance = await publicClient.readContract({
+    const allowancePromise = publicClient.readContract({
       address: rightToken.address,
       abi: erc20Abi,
       functionName: 'allowance',
       args: [address, router.address],
     });
+
+    const sleepPromise = sleep(500);
+
+    const [allowance] = await Promise.all([allowancePromise, sleepPromise]);
 
     return allowance;
   };
@@ -337,11 +350,6 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
 
       const [address] = await walletClient.getAddresses();
 
-      const parsedLeftTokenAmount = parseUnits(
-        leftTokenAmount,
-        leftToken.decimals,
-      );
-
       setApproveLoadingMessage(
         `Approve ${leftToken.symbol} transaction in progress`,
       );
@@ -351,7 +359,7 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
         abi: erc20Abi,
         functionName: 'approve',
         account: address,
-        args: [router.address, parsedLeftTokenAmount],
+        args: [router.address, maxUint256],
       });
 
       const approveReceipt = await publicClient.waitForTransactionReceipt({
@@ -449,11 +457,6 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
 
       const [address] = await walletClient.getAddresses();
 
-      const parsedRightTokenAmount = parseUnits(
-        rightTokenAmount,
-        rightToken.decimals,
-      );
-
       setApproveLoadingMessage(
         `Approve ${rightToken.symbol} transaction in progress`,
       );
@@ -463,7 +466,7 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
         abi: erc20Abi,
         functionName: 'approve',
         account: address,
-        args: [router.address, parsedRightTokenAmount],
+        args: [router.address, maxUint256],
       });
 
       const approveReceipt = await publicClient.waitForTransactionReceipt({
@@ -545,10 +548,6 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
 
   const cancelHandler = () => {
     onCancel();
-  };
-
-  const afterCloseHandler = () => {
-    reset();
   };
 
   const signMessageHandler = async () => {
@@ -703,8 +702,6 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
 
       const [address] = await walletClient.getAddresses();
 
-      await sleep(300);
-
       const poolKey: any[] = [
         token0.address,
         token1.address,
@@ -758,13 +755,17 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
         takeClaims,
       ];
 
-      const result = await publicClient.simulateContract({
+      const simulationPromise = publicClient.simulateContract({
         account: address,
         address: router.address,
         abi: router.abi,
         functionName: 'modifyLiquidity',
         args,
       });
+
+      const sleepPromise = sleep(1000);
+
+      await Promise.all([simulationPromise, sleepPromise]);
 
       setStep(3);
 
@@ -977,10 +978,26 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
   };
 
   useEffect(() => {
-    if (step === 2) {
+    if (step === 1) {
+      signMessageHandler();
+    } else if (step === 2) {
       simulateHandler();
+    } else if (step === 3) {
+      addLiquidityHandler();
     }
   }, [step]);
+
+  useEffect(() => {
+    if (purefiStep === 1) {
+      verifyData();
+    }
+  }, [purefiStep]);
+
+  useEffect(() => {
+    return () => {
+      reset();
+    };
+  }, []);
 
   const specialClassName = classNames({
     [styles.special]: !step4Loading && !addError && !addCompleted,
@@ -1007,7 +1024,6 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
       title={title}
       open={open}
       onCancel={cancelHandler}
-      afterClose={afterCloseHandler}
       footer={null}
       style={{ top: 150, minWidth: '440px' }}
       maskClosable={false}
@@ -1065,26 +1081,37 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
                           vertical
                         >
                           <Flex className={styles.item} justify="space-between">
-                            <div className={styles.item__title}>
+                            <div
+                              className={`${styles.item__title} ${styles.item__title_margin}`}
+                            >
                               Current allowance
                             </div>
                             <div className={styles.white}>
                               {currentAllowanceLeft !== null && (
-                                <>
+                                <Typography.Text
+                                  style={{ maxWidth: '100%' }}
+                                  ellipsis={{ suffix: ` ${leftToken.symbol}` }}
+                                >
                                   {formatUnits(
                                     currentAllowanceLeft,
                                     leftToken.decimals,
-                                  )}{' '}
-                                  {leftToken.symbol}
-                                </>
+                                  )}
+                                </Typography.Text>
                               )}
                             </div>
                           </Flex>
 
                           <Flex className={styles.item} justify="space-between">
-                            <div>Required allowance</div>
+                            <div className={styles.item__title_margin}>
+                              Required allowance
+                            </div>
                             <div className={styles.white}>
-                              {leftTokenAmount.toString()} {leftToken.symbol}
+                              <Typography.Text
+                                style={{ maxWidth: '100%' }}
+                                ellipsis={{ suffix: ` ${leftToken.symbol}` }}
+                              >
+                                {leftTokenAmount.toString()}
+                              </Typography.Text>
                             </div>
                           </Flex>
                         </Flex>
@@ -1100,21 +1127,30 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
                             </div>
                             <div className={styles.white}>
                               {currentAllowanceRight !== null && (
-                                <>
+                                <Typography.Text
+                                  style={{ maxWidth: '100%' }}
+                                  ellipsis={{ suffix: ` ${rightToken.symbol}` }}
+                                >
                                   {formatUnits(
                                     currentAllowanceRight,
                                     rightToken.decimals,
-                                  )}{' '}
-                                  {rightToken.symbol}
-                                </>
+                                  )}
+                                </Typography.Text>
                               )}
                             </div>
                           </Flex>
 
                           <Flex className={styles.item} justify="space-between">
-                            <div>Required allowance</div>
+                            <div className={styles.item__title_margin}>
+                              Required allowance
+                            </div>
                             <div className={styles.white}>
-                              {rightTokenAmount.toString()} {rightToken.symbol}
+                              <Typography.Text
+                                style={{ maxWidth: '100%' }}
+                                ellipsis={{ suffix: ` ${rightToken.symbol}` }}
+                              >
+                                {rightTokenAmount.toString()}
+                              </Typography.Text>
                             </div>
                           </Flex>
                         </Flex>
@@ -1126,32 +1162,46 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
             </div>
 
             <div className={styles.step__footer}>
-              {currentAllowanceLeft !== null &&
-                currentAllowanceLeft <
-                  parseUnits(leftTokenAmount, leftToken.decimals) && (
-                  <Button
-                    className={styles.theButton}
-                    onClick={leftApproveHandler}
-                    disabled={step1Loading || approveLoading}
-                    block
-                  >
-                    Approve {leftToken.symbol}
-                  </Button>
-                )}
+              {step1Loading && (
+                <Button
+                  className={styles.theButton}
+                  onClick={leftApproveHandler}
+                  disabled={step1Loading}
+                  block
+                >
+                  Checking...
+                </Button>
+              )}
+              {!step1Loading && (
+                <>
+                  {currentAllowanceLeft !== null &&
+                    currentAllowanceLeft <
+                      parseUnits(leftTokenAmount, leftToken.decimals) && (
+                      <Button
+                        className={styles.theButton}
+                        onClick={leftApproveHandler}
+                        disabled={step1Loading || approveLoading}
+                        block
+                      >
+                        Approve {leftToken.symbol}
+                      </Button>
+                    )}
 
-              {currentAllowanceRight !== null &&
-                currentAllowanceRight <
-                  parseUnits(rightTokenAmount, rightToken.decimals) && (
-                  <Button
-                    className={styles.theButton}
-                    onClick={rightApproveHandler}
-                    disabled={step1Loading || approveLoading}
-                    style={{ marginTop: '10px' }}
-                    block
-                  >
-                    Approve {rightToken.symbol}
-                  </Button>
-                )}
+                  {currentAllowanceRight !== null &&
+                    currentAllowanceRight <
+                      parseUnits(rightTokenAmount, rightToken.decimals) && (
+                      <Button
+                        className={styles.theButton}
+                        onClick={rightApproveHandler}
+                        disabled={step1Loading || approveLoading}
+                        style={{ marginTop: '10px' }}
+                        block
+                      >
+                        Approve {rightToken.symbol}
+                      </Button>
+                    )}
+                </>
+              )}
             </div>
           </div>
         )}
@@ -1231,7 +1281,7 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
                   disabled={step21Loading}
                   block
                 >
-                  Sign Message
+                  Sign
                 </Button>
               )}
 
@@ -1242,7 +1292,8 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
                   disabled={step22Loading}
                   block
                 >
-                  Verify
+                  {step22Loading && 'Verifying...'}
+                  {!step22Loading && 'Verify'}
                 </Button>
               )}
             </div>
@@ -1292,7 +1343,8 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
                 disabled={step3Loading}
                 block
               >
-                Simulate
+                {step3Loading && 'Simulating...'}
+                {!step3Loading && 'Simulate'}
               </Button>
 
               {simulationError && (

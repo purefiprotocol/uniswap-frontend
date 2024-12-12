@@ -52,6 +52,7 @@ import {
   formatBalance,
   correctPriceByPrice,
   correctPriceByTick,
+  abortController,
 } from '@/utils';
 
 import { AutoHeight } from '../AutoHeight';
@@ -159,6 +160,7 @@ const SwapCard: FC = () => {
 
   const closeLiquidityModal = () => {
     setIsLiquidityModalOpen(false);
+    abortController.abort();
   };
 
   const slippageChangeHandler = (e: RadioChangeEvent) => {
@@ -1198,23 +1200,25 @@ const SwapCard: FC = () => {
         </div>
       </Card>
 
-      <LiquidityModal
-        title="Add Liquidity Flow"
-        open={isLiquidityModalOpen}
-        leftToken={leftToken}
-        leftTokenAmount={leftTokenAmount}
-        rightToken={rightToken}
-        rightTokenAmount={rightTokenAmount}
-        tickLower={tickLower}
-        tickUpper={tickUpper}
-        token0={token0}
-        token1={token1}
-        pool={pool}
-        router={liquidityRouter}
-        slot0={slot0!}
-        slippage={slippage}
-        onCancel={closeLiquidityModal}
-      />
+      {isLiquidityModalOpen && (
+        <LiquidityModal
+          title="Add Liquidity Flow"
+          open={isLiquidityModalOpen}
+          leftToken={leftToken}
+          leftTokenAmount={leftTokenAmount}
+          rightToken={rightToken}
+          rightTokenAmount={rightTokenAmount}
+          tickLower={tickLower}
+          tickUpper={tickUpper}
+          token0={token0}
+          token1={token1}
+          pool={pool}
+          router={liquidityRouter}
+          slot0={slot0!}
+          slippage={slippage}
+          onCancel={closeLiquidityModal}
+        />
+      )}
     </>
   );
 };
