@@ -63,7 +63,7 @@ createAppKit({
   chainImages: {
     [polygonAmoy.id]: polygonSrc,
   },
-  termsConditionsUrl: 'https://stage.dashboard.purefi.io/terms.pdf',
+  termsConditionsUrl: `${window.location.origin}/terms.pdf`,
   allWallets: 'SHOW',
   features: {
     swaps: false,
