@@ -1,5 +1,5 @@
 import { FC, useEffect, useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import {
   Button,
   Collapse,
@@ -35,6 +35,8 @@ import {
   LoadingOutlined,
   SignatureOutlined,
   SolutionOutlined,
+  WarningOutlined,
+  CloseCircleOutlined,
 } from '@ant-design/icons';
 import classNames from 'classnames';
 
@@ -131,6 +133,7 @@ const SwapModal: FC<SwapModalProps> = (props) => {
     onCancel,
   } = props;
 
+  const navigate = useNavigate();
   const account = useAccount();
 
   const isWalletConnected = account.isConnected;
@@ -174,6 +177,8 @@ const SwapModal: FC<SwapModalProps> = (props) => {
 
   const [simulationError, setSimulationError] = useState<string | null>(null);
   const [swapError, setSwapError] = useState<string | null>(null);
+  const [purefiError, setPurefiError] = useState<string | null>(null);
+  const [isKycAllowed, setIsKycAllowed] = useState(false);
 
   const [purefiPayload, setPurefiPayload] = useState<PureFIPayload | null>(
     null,
@@ -222,6 +227,9 @@ const SwapModal: FC<SwapModalProps> = (props) => {
 
     setSimulationError(null);
     setSwapError(null);
+    setPurefiError(null);
+    setIsKycAllowed(false);
+
     setSwapCompleted(false);
 
     setApproveLoadingMessage('Confirm approve transaction');
@@ -453,84 +461,59 @@ const SwapModal: FC<SwapModalProps> = (props) => {
   };
 
   const verifyData = async () => {
-    try {
-      setStep22Loading(true);
+    if (!isKycAllowed) {
+      try {
+        setStep22Loading(true);
 
-      const data = await PureFI.verifyRule(purefiPayload!, SignatureType.ECDSA);
-
-      // const result = await fetch('https://stage.issuer.app.purefi.io/v4/rule', {
-      //   method: 'POST',
-      //   body: JSON.stringify({
-      //     ...purefiPayload,
-      //     signType: SignatureType.ECDSA,
-      //   }),
-      //   signal: controller.signal,
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      // });
-      // const data = await result.json();
-
-      setPurefiData(data);
-
-      setPurefiStepItems((prev) => {
-        const step1 = prev[0];
-        const step2 = prev[1];
-        step2.status = 'finish';
-
-        const newSteps = [step1, step2];
-        return newSteps;
-      });
-
-      setStepItems((prev) => {
-        const step1 = prev[0];
-        const step2 = prev[1];
-        const step3 = prev[2];
-        const step4 = prev[3];
-        step2.status = 'finish';
-        step3.status = 'process';
-
-        const newSteps = [step1, step2, step3, step4];
-        return newSteps;
-      });
-
-      setStep(2);
-    } catch (error: unknown) {
-      const theError = error as PureFIError;
-
-      if (theError.code === PureFIErrorCodes.FORBIDDEN) {
-        const toastContent = (
-          <NavLink
-            to="/kyc"
-            style={{
-              textDecoration: 'none',
-              paddingBottom: '5px',
-              borderBottom: '1px solid',
-              color: 'white',
-            }}
-          >
-            {theError.message}
-          </NavLink>
+        const data = await PureFI.verifyRule(
+          purefiPayload!,
+          SignatureType.ECDSA,
         );
 
-        toast.warn(toastContent, {
-          autoClose: false,
-          closeOnClick: true,
+        setPurefiData(data);
+
+        setPurefiStepItems((prev) => {
+          const step1 = prev[0];
+          const step2 = prev[1];
+          step2.status = 'finish';
+
+          const newSteps = [step1, step2];
+          return newSteps;
         });
-      } else {
-        toast.error(theError.message);
+
+        setStepItems((prev) => {
+          const step1 = prev[0];
+          const step2 = prev[1];
+          const step3 = prev[2];
+          const step4 = prev[3];
+          step2.status = 'finish';
+          step3.status = 'process';
+
+          const newSteps = [step1, step2, step3, step4];
+          return newSteps;
+        });
+
+        setStep(2);
+      } catch (error: unknown) {
+        const theError = error as PureFIError;
+
+        setPurefiError(theError.message);
+
+        if (theError.code === PureFIErrorCodes.FORBIDDEN) {
+          setIsKycAllowed(true);
+        }
+
+        setPurefiStepItems((prev) => {
+          const step1 = prev[0];
+          const step2 = prev[1];
+          step2.status = 'error';
+
+          const newSteps = [step1, step2];
+          return newSteps;
+        });
+      } finally {
+        setStep22Loading(false);
       }
-
-      setPurefiStepItems((prev) => {
-        const step1 = prev[0];
-        const step2 = prev[1];
-        step2.status = 'error';
-
-        const newSteps = [step1, step2];
-        return newSteps;
-      });
-    } finally {
-      setStep22Loading(false);
     }
   };
 
@@ -965,26 +948,19 @@ const SwapModal: FC<SwapModalProps> = (props) => {
 
               {purefiStep === 0 && (
                 <div>
-                  {step21Loading && (
-                    <div className={styles.loader__container}>
-                      <div className={styles.loader__message}>Sign message</div>
-                      <div className={styles.loader__spinner}>
-                        <LoadingOutlined />
-                      </div>
-                      <div className={styles.loader__hint}>
-                        Proceed in your wallet
-                      </div>
-                    </div>
-                  )}
-
-                  {!step21Loading && (
-                    <textarea
-                      className={styles.textarea}
-                      value={JSON.stringify(messageData, undefined, 4)}
-                      rows={8}
-                      onChange={() => {}}
-                    />
-                  )}
+                  <div className={styles.loader__container}>
+                    <div className={styles.loader__message}>Sign message</div>
+                    {step21Loading && (
+                      <>
+                        <div className={styles.loader__spinner}>
+                          <LoadingOutlined />
+                        </div>
+                        <div className={styles.loader__hint}>
+                          Proceed in your wallet
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -1000,20 +976,21 @@ const SwapModal: FC<SwapModalProps> = (props) => {
                       </div>
                     </div>
                   )}
-                  {!step22Loading && (
-                    <textarea
-                      className={styles.textarea}
-                      value={JSON.stringify(
-                        {
-                          message: messageData,
-                          signature: `${purefiPayload?.signature.toString().slice(0, 50)}...`,
-                        },
-                        undefined,
-                        4,
-                      )}
-                      rows={11}
-                      onChange={() => {}}
-                    />
+
+                  {!step22Loading && purefiError && (
+                    <div className={styles.loader__container}>
+                      <div className={styles.loader__message}>
+                        {purefiError}
+                      </div>
+                      <div className={styles.loader__spinner}>
+                        {isKycAllowed && (
+                          <WarningOutlined style={{ color: '#e6a700' }} />
+                        )}
+                        {!isKycAllowed && (
+                          <CloseCircleOutlined style={{ color: '#ff4d4f' }} />
+                        )}
+                      </div>
+                    </div>
                   )}
                 </div>
               )}
@@ -1032,15 +1009,31 @@ const SwapModal: FC<SwapModalProps> = (props) => {
               )}
 
               {purefiStep === 1 && (
-                <Button
-                  className={styles.theButton}
-                  onClick={verifyData}
-                  disabled={step22Loading}
-                  block
-                >
-                  {step22Loading && 'Verifying...'}
-                  {!step22Loading && 'Verify'}
-                </Button>
+                <>
+                  {!!purefiError && isKycAllowed && (
+                    <Button
+                      className={styles.theButton}
+                      onClick={() => {
+                        navigate('/kyc');
+                      }}
+                      block
+                    >
+                      Start verification
+                    </Button>
+                  )}
+
+                  {!isKycAllowed && (
+                    <Button
+                      className={styles.theButton}
+                      onClick={verifyData}
+                      disabled={step22Loading}
+                      block
+                    >
+                      {step22Loading && 'Verifying...'}
+                      {!step22Loading && 'Verify'}
+                    </Button>
+                  )}
+                </>
               )}
             </div>
           </div>
