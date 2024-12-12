@@ -1,6 +1,14 @@
 import { FC, useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Button, Collapse, Flex, Modal, StepProps, Steps } from 'antd';
+import {
+  Button,
+  Collapse,
+  Flex,
+  Modal,
+  StepProps,
+  Steps,
+  Typography,
+} from 'antd';
 import { useAccount } from 'wagmi';
 import {
   BaseError,
@@ -10,6 +18,7 @@ import {
   erc20Abi,
   formatUnits,
   http,
+  maxUint256,
   parseUnits,
 } from 'viem';
 import { toast } from 'react-toastify';
@@ -37,6 +46,7 @@ import {
   SwapTypeEnum,
 } from '@/models';
 import {
+  abortController,
   calculateDelta,
   checkIfChainSupported,
   getTransactionLink,
@@ -226,14 +236,16 @@ const SwapModal: FC<SwapModalProps> = (props) => {
 
     const [address] = await walletClient.getAddresses();
 
-    await sleep(200);
-
-    const allowance = await publicClient.readContract({
+    const allowancePromise = publicClient.readContract({
       address: inToken.address,
       abi: erc20Abi,
       functionName: 'allowance',
       args: [address, router.address],
     });
+
+    const sleepPromise = sleep(1000);
+
+    const [allowance] = await Promise.all([allowancePromise, sleepPromise]);
 
     return allowance;
   };
@@ -302,14 +314,12 @@ const SwapModal: FC<SwapModalProps> = (props) => {
 
       const [address] = await walletClient.getAddresses();
 
-      const parsedInValue = parseUnits(inValue, inToken.decimals);
-
       const approveHash = await walletClient.writeContract({
         address: inToken.address,
         abi: erc20Abi,
         functionName: 'approve',
         account: address,
-        args: [router.address, parsedInValue],
+        args: [router.address, maxUint256],
       });
 
       setApproveLoadingMessage('Approve transaction in progress');
@@ -381,10 +391,6 @@ const SwapModal: FC<SwapModalProps> = (props) => {
     onCancel();
   };
 
-  const afterCloseHandler = () => {
-    reset();
-  };
-
   const signMessageHandler = async () => {
     try {
       const walletClient = createWalletClient({
@@ -432,9 +438,7 @@ const SwapModal: FC<SwapModalProps> = (props) => {
       });
     } catch (error: unknown) {
       const theError = error as BaseError;
-      toast.error(theError.shortMessage, {
-        autoClose: false,
-      });
+      toast.error(theError.shortMessage);
 
       setPurefiStepItems((prev) => {
         const step1 = prev[0];
@@ -453,6 +457,19 @@ const SwapModal: FC<SwapModalProps> = (props) => {
       setStep22Loading(true);
 
       const data = await PureFI.verifyRule(purefiPayload!, SignatureType.ECDSA);
+
+      // const result = await fetch('https://stage.issuer.app.purefi.io/v4/rule', {
+      //   method: 'POST',
+      //   body: JSON.stringify({
+      //     ...purefiPayload,
+      //     signType: SignatureType.ECDSA,
+      //   }),
+      //   signal: controller.signal,
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //   },
+      // });
+      // const data = await result.json();
 
       setPurefiData(data);
 
@@ -539,8 +556,6 @@ const SwapModal: FC<SwapModalProps> = (props) => {
 
       const [address] = await walletClient.getAddresses();
 
-      await sleep(300);
-
       const parsedInValue = parseUnits(frozenInValue, inToken.decimals);
       const parsedOutValue = parseUnits(frozenOutValue, outToken.decimals);
 
@@ -578,13 +593,17 @@ const SwapModal: FC<SwapModalProps> = (props) => {
 
       const args = [poolKey, swapParams, testSettings, purefiData];
 
-      const result = await publicClient.simulateContract({
+      const simulationPromise = publicClient.simulateContract({
         account: address,
         address: router.address,
         abi: router.abi,
         functionName: 'swap',
         args,
       });
+
+      const sleepPromise = sleep(1000);
+
+      await Promise.all([simulationPromise, sleepPromise]);
 
       setStep(3);
 
@@ -783,10 +802,26 @@ const SwapModal: FC<SwapModalProps> = (props) => {
   };
 
   useEffect(() => {
-    if (step === 2) {
+    if (step === 1) {
+      signMessageHandler();
+    } else if (step === 2) {
       simulateHandler();
+    } else if (step === 3) {
+      swapHandler();
     }
   }, [step]);
+
+  useEffect(() => {
+    if (purefiStep === 1) {
+      verifyData();
+    }
+  }, [purefiStep]);
+
+  useEffect(() => {
+    return () => {
+      reset();
+    };
+  }, []);
 
   const specialClassName = classNames({
     [styles.special]: !step4Loading && !swapError && !swapCompleted,
@@ -805,7 +840,6 @@ const SwapModal: FC<SwapModalProps> = (props) => {
       title={title}
       open={open}
       onCancel={cancelHandler}
-      afterClose={afterCloseHandler}
       footer={null}
       style={{ top: 150, minWidth: '440px' }}
       maskClosable={false}
@@ -863,26 +897,37 @@ const SwapModal: FC<SwapModalProps> = (props) => {
                           vertical
                         >
                           <Flex className={styles.item} justify="space-between">
-                            <div className={styles.item__title}>
+                            <div
+                              className={`${styles.item__title} ${styles.item__title_margin}`}
+                            >
                               Current allowance
                             </div>
                             <div className={styles.white}>
                               {currentAllowance !== null && (
-                                <>
+                                <Typography.Text
+                                  style={{ maxWidth: '100%' }}
+                                  ellipsis={{ suffix: ` ${inToken.symbol}` }}
+                                >
                                   {formatUnits(
                                     currentAllowance,
                                     inToken.decimals,
-                                  )}{' '}
-                                  {inToken.symbol}
-                                </>
+                                  )}
+                                </Typography.Text>
                               )}
                             </div>
                           </Flex>
 
                           <Flex className={styles.item} justify="space-between">
-                            <div>Required allowance</div>
+                            <div className={styles.item__title_margin}>
+                              Required allowance
+                            </div>
                             <div className={styles.white}>
-                              {inValue.toString()} {inToken.symbol}
+                              <Typography.Text
+                                style={{ maxWidth: '100%' }}
+                                ellipsis={{ suffix: ` ${inToken.symbol}` }}
+                              >
+                                {inValue.toString()}
+                              </Typography.Text>
                             </div>
                           </Flex>
                         </Flex>
@@ -900,7 +945,8 @@ const SwapModal: FC<SwapModalProps> = (props) => {
                 disabled={step1Loading || approveLoading}
                 block
               >
-                Approve {inToken.symbol}
+                {step1Loading && 'Checking...'}
+                {!step1Loading && `Approve ${inToken.symbol}`}
               </Button>
             </div>
           </div>
@@ -981,7 +1027,7 @@ const SwapModal: FC<SwapModalProps> = (props) => {
                   disabled={step21Loading}
                   block
                 >
-                  Sign Message
+                  Sign
                 </Button>
               )}
 
@@ -992,7 +1038,8 @@ const SwapModal: FC<SwapModalProps> = (props) => {
                   disabled={step22Loading}
                   block
                 >
-                  Verify
+                  {step22Loading && 'Verifying...'}
+                  {!step22Loading && 'Verify'}
                 </Button>
               )}
             </div>
@@ -1005,7 +1052,9 @@ const SwapModal: FC<SwapModalProps> = (props) => {
               <div>
                 {step3Loading && (
                   <div className={styles.loader__container}>
-                    <div className={styles.loader__message}>Simulation</div>
+                    <div className={styles.loader__message}>
+                      Simulation in progress
+                    </div>
                     <div className={styles.loader__spinner}>
                       <LoadingOutlined />
                     </div>
@@ -1042,7 +1091,8 @@ const SwapModal: FC<SwapModalProps> = (props) => {
                 disabled={step3Loading}
                 block
               >
-                Simulate
+                {step3Loading && 'Simulating...'}
+                {!step3Loading && 'Simulate'}
               </Button>
 
               {simulationError && (

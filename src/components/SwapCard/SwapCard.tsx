@@ -45,8 +45,8 @@ import {
   formatPrice,
   checkIfChainSupported,
   formatFee,
-  sleep,
   getPriceBySqrtX96,
+  abortController,
 } from '@/utils';
 
 import { SwapModal } from '../SwapModal';
@@ -111,6 +111,7 @@ const SwapCard: FC = () => {
 
   const closeSwapModal = () => {
     setIsSwapModalOpen(false);
+    abortController.abort();
   };
 
   const [slippage, setSlippage] = useState(
@@ -645,23 +646,25 @@ const SwapCard: FC = () => {
         )}
       </Card>
 
-      <SwapModal
-        title="Swap Flow"
-        open={isSwapModalOpen}
-        inValue={inValue}
-        inToken={inToken}
-        outValue={outValue}
-        outToken={outToken}
-        token0={token0}
-        token1={token1}
-        pool={pool}
-        router={swapRouter}
-        poolManagerViewer={poolManagerViewer}
-        swapType={swapType}
-        slot0={slot0!}
-        slippage={slippage}
-        onCancel={closeSwapModal}
-      />
+      {isSwapModalOpen && (
+        <SwapModal
+          title="Swap Flow"
+          open={isSwapModalOpen}
+          inValue={inValue}
+          inToken={inToken}
+          outValue={outValue}
+          outToken={outToken}
+          token0={token0}
+          token1={token1}
+          pool={pool}
+          router={swapRouter}
+          poolManagerViewer={poolManagerViewer}
+          swapType={swapType}
+          slot0={slot0!}
+          slippage={slippage}
+          onCancel={closeSwapModal}
+        />
+      )}
     </>
   );
 };
