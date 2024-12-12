@@ -280,7 +280,7 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
         const isLeftAllowanceOk =
           leftAllowance >= parseUnits(leftTokenAmount, leftToken.decimals);
         const isRightAllowanceOk =
-          leftAllowance >= parseUnits(rightTokenAmount, rightToken.decimals);
+          rightAllowance >= parseUnits(rightTokenAmount, rightToken.decimals);
 
         if (isLeftAllowanceOk) {
           setFrozenLeftTokenAmount(leftTokenAmount);
