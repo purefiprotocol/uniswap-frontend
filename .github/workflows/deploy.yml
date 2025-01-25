@@ -30,6 +30,7 @@ jobs:
         uses: SpicyPizza/create-envfile@v1
         with:
           envkey_VITE_WALLET_CONNECT_PROJECT_ID: ${{ secrets.VITE_WALLET_CONNECT_PROJECT_ID }}
+          envkey_VITE_API_URL: https://stage.issuer.app.purefi.io
           file_name: .env
 
       - name: Install dependencies with yarn
