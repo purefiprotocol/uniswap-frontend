@@ -12,6 +12,7 @@ import {
 import { useAccount } from 'wagmi';
 import {
   BaseError,
+  Chain,
   createPublicClient,
   createWalletClient,
   custom,
@@ -26,9 +27,13 @@ import {
   PureFI,
   PureFIError,
   PureFIErrorCodes,
-  PureFIPayload,
-  SignatureType,
+  createDomain,
+  createRuleV5Types,
+  PureFIRuleV5Payload,
+  RuleV5Data,
+  RuleV5Payload,
 } from '@purefi/kyc-sdk';
+
 import {
   ArrowRightOutlined,
   CheckCircleOutlined,
@@ -54,12 +59,12 @@ import {
   getTransactionLink,
   sleep,
 } from '@/utils';
+import { DEFAULT_CHAIN_VIEM } from '@/config';
 
 import { AutoHeight } from '../AutoHeight';
 import { DashboardLink, TxnLink } from '../TxnLink';
 
 import styles from './SwapModal.module.scss';
-import { DEFAULT_CHAIN } from '@/config';
 
 interface SwapModalProps {
   title: string;
@@ -141,7 +146,7 @@ const SwapModal: FC<SwapModalProps> = (props) => {
   const isReady = isWalletConnected && isChainSupported;
 
   const publicClientConfig = {
-    chain: isReady ? account.chain : DEFAULT_CHAIN,
+    chain: isReady ? account.chain : DEFAULT_CHAIN_VIEM,
     transport: isReady ? custom((window as any).ethereum!) : http(),
   };
 
@@ -180,19 +185,9 @@ const SwapModal: FC<SwapModalProps> = (props) => {
   const [purefiError, setPurefiError] = useState<string | null>(null);
   const [isKycAllowed, setIsKycAllowed] = useState(false);
 
-  const [purefiPayload, setPurefiPayload] = useState<PureFIPayload | null>(
-    null,
-  );
+  const [purefiPayload, setPurefiPayload] =
+    useState<PureFIRuleV5Payload | null>(null);
   const [purefiData, setPurefiData] = useState<string | null>(null);
-
-  const messageData = {
-    sender: account.address!,
-    receiver: router.address,
-    ruleId: pool.swapRuleId,
-    chainId: account.chainId,
-    amount: parseUnits(inValue, inToken.decimals).toString(),
-    token: inToken.address,
-  };
 
   const reset = () => {
     setStep(0);
@@ -418,15 +413,42 @@ const SwapModal: FC<SwapModalProps> = (props) => {
 
       const [address] = await walletClient.getAddresses();
 
-      const message = JSON.stringify(messageData);
+      const domain = createDomain('PureFi', account.chainId!);
 
-      const signature = await walletClient.signMessage({
+      const ruleV5Payload: RuleV5Payload = {
+        ruleId: pool.liquidityRuleId,
+        from: account.address!,
+        to: router.address,
+        tokenData0: {
+          address: inToken.address,
+          value: parseUnits(inValue, inToken.decimals).toString(),
+          decimals: inToken.decimals.toString(),
+        },
+        packageType: '32',
+      };
+
+      const ruleV5Data: RuleV5Data = {
+        account: {
+          address: account.address!,
+        },
+        chain: {
+          id: account.chainId!.toString(),
+        },
+        payload: ruleV5Payload,
+      };
+
+      const v5RuleTypes = createRuleV5Types(ruleV5Payload);
+
+      const signature = await walletClient.signTypedData({
         account: address,
-        message,
+        domain,
+        types: v5RuleTypes,
+        primaryType: 'Data',
+        message: ruleV5Data,
       });
 
-      const payload: PureFIPayload = {
-        message,
+      const payload: PureFIRuleV5Payload = {
+        message: ruleV5Data,
         signature,
       };
 
@@ -465,10 +487,9 @@ const SwapModal: FC<SwapModalProps> = (props) => {
       try {
         setStep22Loading(true);
 
-        const data = await PureFI.verifyRule(
-          purefiPayload!,
-          SignatureType.ECDSA,
-        );
+        await sleep(500);
+
+        const data = await PureFI.verifyRuleV5(purefiPayload!);
 
         setPurefiData(data);
 
