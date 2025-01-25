@@ -8,6 +8,7 @@ import {
   formatUnits,
   http,
   parseUnits,
+  Chain,
 } from 'viem';
 import {
   NumberFormatValues,
@@ -29,7 +30,7 @@ import {
 import { QuestionCircleOutlined, SwapOutlined } from '@ant-design/icons';
 
 import { useConnectModal, useTokenBalance, useQuoter } from '@/hooks';
-import { DEFAULT_CHAIN, getConfig } from '@/config';
+import { DEFAULT_CHAIN_VIEM, getConfig } from '@/config';
 import { Slot0, SwapTypeEnum, TokenConfig } from '@/models';
 import {
   DEBOUNCE_DELAY,
@@ -45,8 +46,8 @@ import {
   formatPrice,
   checkIfChainSupported,
   formatFee,
-  sleep,
   getPriceBySqrtX96,
+  abortController,
 } from '@/utils';
 
 import { SwapModal } from '../SwapModal';
@@ -61,7 +62,7 @@ const SwapCard: FC = () => {
   const isReady = isWalletConnected && isChainSupported;
 
   const publicClientConfig = {
-    chain: isReady ? account.chain : DEFAULT_CHAIN,
+    chain: isReady ? account.chain : DEFAULT_CHAIN_VIEM,
     transport: isReady ? custom((window as any).ethereum!) : http(),
   };
 
@@ -111,6 +112,7 @@ const SwapCard: FC = () => {
 
   const closeSwapModal = () => {
     setIsSwapModalOpen(false);
+    abortController.abort();
   };
 
   const [slippage, setSlippage] = useState(
@@ -135,7 +137,7 @@ const SwapCard: FC = () => {
   };
 
   const switchChainHandler = () => {
-    switchChain?.({ chainId: DEFAULT_CHAIN.id });
+    switchChain?.({ chainId: DEFAULT_CHAIN_VIEM.id });
   };
 
   const maxHandler = () => {
@@ -645,23 +647,25 @@ const SwapCard: FC = () => {
         )}
       </Card>
 
-      <SwapModal
-        title="Swap Flow"
-        open={isSwapModalOpen}
-        inValue={inValue}
-        inToken={inToken}
-        outValue={outValue}
-        outToken={outToken}
-        token0={token0}
-        token1={token1}
-        pool={pool}
-        router={swapRouter}
-        poolManagerViewer={poolManagerViewer}
-        swapType={swapType}
-        slot0={slot0!}
-        slippage={slippage}
-        onCancel={closeSwapModal}
-      />
+      {isSwapModalOpen && (
+        <SwapModal
+          title="Swap Flow"
+          open={isSwapModalOpen}
+          inValue={inValue}
+          inToken={inToken}
+          outValue={outValue}
+          outToken={outToken}
+          token0={token0}
+          token1={token1}
+          pool={pool}
+          router={swapRouter}
+          poolManagerViewer={poolManagerViewer}
+          swapType={swapType}
+          slot0={slot0!}
+          slippage={slippage}
+          onCancel={closeSwapModal}
+        />
+      )}
     </>
   );
 };
