@@ -1,5 +1,5 @@
 import { FC, useEffect, useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import {
   Button,
   Collapse,
@@ -28,18 +28,24 @@ import {
   PureFI,
   PureFIError,
   PureFIErrorCodes,
-  PureFIPayload,
-  SignatureType,
+  createDomain,
+  createRuleV5Types,
+  PureFIRuleV5Payload,
+  RuleV5Data,
+  RuleV5Payload,
 } from '@purefi/kyc-sdk';
+
 import {
   CheckCircleOutlined,
   LoadingOutlined,
   SignatureOutlined,
   SolutionOutlined,
+  WarningOutlined,
+  CloseCircleOutlined,
 } from '@ant-design/icons';
 import classNames from 'classnames';
 
-import { DEFAULT_CHAIN } from '@/config';
+import { DEFAULT_CHAIN_VIEM } from '@/config';
 
 import { ContractConfig, PoolConfig, TokenConfig, Slot0 } from '@/models';
 import { checkIfChainSupported, getTransactionLink, sleep } from '@/utils';
@@ -62,6 +68,7 @@ interface LiquidityModalProps {
   token1: TokenConfig;
   pool: PoolConfig;
   router: ContractConfig;
+  routerHelper: ContractConfig;
   slot0: Slot0;
   slippage: number;
   onCancel: () => void;
@@ -116,11 +123,13 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
     token1,
     pool,
     router,
+    routerHelper,
     slot0,
     slippage,
     onCancel,
   } = props;
 
+  const navigate = useNavigate();
   const account = useAccount();
 
   const isWalletConnected = account.isConnected;
@@ -128,7 +137,7 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
   const isReady = isWalletConnected && isChainSupported;
 
   const publicClientConfig = {
-    chain: isReady ? account.chain : DEFAULT_CHAIN,
+    chain: isReady ? account.chain : DEFAULT_CHAIN_VIEM,
     transport: isReady ? custom((window as any).ethereum!) : http(),
   };
 
@@ -171,18 +180,12 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
 
   const [simulationError, setSimulationError] = useState<string | null>(null);
   const [addError, setAddError] = useState<string | null>(null);
+  const [purefiError, setPurefiError] = useState<string | null>(null);
+  const [isKycAllowed, setIsKycAllowed] = useState(false);
 
-  const [purefiPayload, setPurefiPayload] = useState<PureFIPayload | null>(
-    null,
-  );
+  const [purefiPayload, setPurefiPayload] =
+    useState<PureFIRuleV5Payload | null>(null);
   const [purefiData, setPurefiData] = useState<string | null>(null);
-
-  const messageData = {
-    sender: account.address!,
-    receiver: router.address,
-    ruleId: pool.liquidityRuleId,
-    chainId: account.chainId,
-  };
 
   const reset = () => {
     setStep(0);
@@ -221,6 +224,8 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
 
     setSimulationError(null);
     setAddError(null);
+    setPurefiError(null);
+    setIsKycAllowed(false);
     setAddCompleted(false);
 
     setApproveLoadingMessage('Confirm approve transaction');
@@ -569,15 +574,47 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
 
       const [address] = await walletClient.getAddresses();
 
-      const message = JSON.stringify(messageData);
+      const domain = createDomain('PureFi', account.chainId!);
 
-      const signature = await walletClient.signMessage({
+      const ruleV5Payload: RuleV5Payload = {
+        ruleId: pool.liquidityRuleId,
+        from: account.address!,
+        to: router.address,
+        tokenData0: {
+          address: leftToken.address,
+          value: parseUnits(leftTokenAmount, leftToken.decimals).toString(),
+          decimals: leftToken.decimals.toString(),
+        },
+        tokenData1: {
+          address: rightToken.address,
+          value: parseUnits(rightTokenAmount, rightToken.decimals).toString(),
+          decimals: rightToken.decimals.toString(),
+        },
+        packageType: '48',
+      };
+
+      const ruleV5Data: RuleV5Data = {
+        account: {
+          address: account.address!,
+        },
+        chain: {
+          id: account.chainId!.toString(),
+        },
+        payload: ruleV5Payload,
+      };
+
+      const ruleV5Types = createRuleV5Types(ruleV5Payload);
+
+      const signature = await walletClient.signTypedData({
         account: address,
-        message,
+        domain,
+        types: ruleV5Types,
+        primaryType: 'Data',
+        message: ruleV5Data,
       });
 
-      const payload: PureFIPayload = {
-        message,
+      const payload: PureFIRuleV5Payload = {
+        message: ruleV5Data,
         signature,
       };
 
@@ -612,71 +649,58 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
   };
 
   const verifyData = async () => {
-    try {
-      setStep22Loading(true);
+    if (!isKycAllowed) {
+      try {
+        setStep22Loading(true);
 
-      const data = await PureFI.verifyRule(purefiPayload!, SignatureType.ECDSA);
+        await sleep(500);
 
-      setPurefiData(data);
+        const data = await PureFI.verifyRuleV5(purefiPayload!);
 
-      setPurefiStepItems((prev) => {
-        const step1 = prev[0];
-        const step2 = prev[1];
-        step2.status = 'finish';
+        setPurefiData(data);
 
-        const newSteps = [step1, step2];
-        return newSteps;
-      });
+        setPurefiStepItems((prev) => {
+          const step1 = prev[0];
+          const step2 = prev[1];
+          step2.status = 'finish';
 
-      setStepItems((prev) => {
-        const step1 = prev[0];
-        const step2 = prev[1];
-        const step3 = prev[2];
-        const step4 = prev[3];
-        step2.status = 'finish';
-        step3.status = 'process';
-
-        const newSteps = [step1, step2, step3, step4];
-        return newSteps;
-      });
-
-      setStep(2);
-    } catch (error: unknown) {
-      const theError = error as PureFIError;
-
-      if (theError.code === PureFIErrorCodes.FORBIDDEN) {
-        const toastContent = (
-          <NavLink
-            to="/kyc"
-            style={{
-              textDecoration: 'none',
-              paddingBottom: '5px',
-              borderBottom: '1px solid',
-              color: 'white',
-            }}
-          >
-            {theError.message}
-          </NavLink>
-        );
-
-        toast.warn(toastContent, {
-          autoClose: false,
-          closeOnClick: true,
+          const newSteps = [step1, step2];
+          return newSteps;
         });
-      } else {
-        toast.error(theError.message);
+
+        setStepItems((prev) => {
+          const step1 = prev[0];
+          const step2 = prev[1];
+          const step3 = prev[2];
+          const step4 = prev[3];
+          step2.status = 'finish';
+          step3.status = 'process';
+
+          const newSteps = [step1, step2, step3, step4];
+          return newSteps;
+        });
+
+        setStep(2);
+      } catch (error: unknown) {
+        const theError = error as PureFIError;
+
+        setPurefiError(theError.message);
+
+        if (theError.code === PureFIErrorCodes.FORBIDDEN) {
+          setIsKycAllowed(true);
+        }
+
+        setPurefiStepItems((prev) => {
+          const step1 = prev[0];
+          const step2 = prev[1];
+          step2.status = 'error';
+
+          const newSteps = [step1, step2];
+          return newSteps;
+        });
+      } finally {
+        setStep22Loading(false);
       }
-
-      setPurefiStepItems((prev) => {
-        const step1 = prev[0];
-        const step2 = prev[1];
-        step2.status = 'error';
-
-        const newSteps = [step1, step2];
-        return newSteps;
-      });
-    } finally {
-      setStep22Loading(false);
     }
   };
 
@@ -731,8 +755,8 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
 
       const liquidityDelta = await publicClient.readContract({
         account: address,
-        address: router.address,
-        abi: router.abi,
+        address: routerHelper.address,
+        abi: routerHelper.abi,
         functionName: 'calculateLiquidityDelta',
         args: calculateLiquidityDeltaArgs,
       });
@@ -869,8 +893,8 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
 
       const liquidityDelta = await publicClient.readContract({
         account: address,
-        address: router.address,
-        abi: router.abi,
+        address: routerHelper.address,
+        abi: routerHelper.abi,
         functionName: 'calculateLiquidityDelta',
         args: calculateLiquidityDeltaArgs,
       });
@@ -1219,26 +1243,19 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
 
               {purefiStep === 0 && (
                 <div>
-                  {step21Loading && (
-                    <div className={styles.loader__container}>
-                      <div className={styles.loader__message}>Sign message</div>
-                      <div className={styles.loader__spinner}>
-                        <LoadingOutlined />
-                      </div>
-                      <div className={styles.loader__hint}>
-                        Proceed in your wallet
-                      </div>
-                    </div>
-                  )}
-
-                  {!step21Loading && (
-                    <textarea
-                      className={styles.textarea}
-                      value={JSON.stringify(messageData, undefined, 4)}
-                      rows={8}
-                      onChange={() => {}}
-                    />
-                  )}
+                  <div className={styles.loader__container}>
+                    <div className={styles.loader__message}>Sign message</div>
+                    {step21Loading && (
+                      <>
+                        <div className={styles.loader__spinner}>
+                          <LoadingOutlined />
+                        </div>
+                        <div className={styles.loader__hint}>
+                          Proceed in your wallet
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -1254,20 +1271,21 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
                       </div>
                     </div>
                   )}
-                  {!step22Loading && (
-                    <textarea
-                      className={styles.textarea}
-                      value={JSON.stringify(
-                        {
-                          message: messageData,
-                          signature: `${purefiPayload?.signature.toString().slice(0, 50)}...`,
-                        },
-                        undefined,
-                        4,
-                      )}
-                      rows={11}
-                      onChange={() => {}}
-                    />
+
+                  {!step22Loading && purefiError && (
+                    <div className={styles.loader__container}>
+                      <div className={styles.loader__message}>
+                        {purefiError}
+                      </div>
+                      <div className={styles.loader__spinner}>
+                        {isKycAllowed && (
+                          <WarningOutlined style={{ color: '#e6a700' }} />
+                        )}
+                        {!isKycAllowed && (
+                          <CloseCircleOutlined style={{ color: '#ff4d4f' }} />
+                        )}
+                      </div>
+                    </div>
                   )}
                 </div>
               )}
@@ -1286,15 +1304,31 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
               )}
 
               {purefiStep === 1 && (
-                <Button
-                  className={styles.theButton}
-                  onClick={verifyData}
-                  disabled={step22Loading}
-                  block
-                >
-                  {step22Loading && 'Verifying...'}
-                  {!step22Loading && 'Verify'}
-                </Button>
+                <>
+                  {!!purefiError && isKycAllowed && (
+                    <Button
+                      className={styles.theButton}
+                      onClick={() => {
+                        navigate('/kyc');
+                      }}
+                      block
+                    >
+                      Start verification
+                    </Button>
+                  )}
+
+                  {!isKycAllowed && (
+                    <Button
+                      className={styles.theButton}
+                      onClick={verifyData}
+                      disabled={step22Loading}
+                      block
+                    >
+                      {step22Loading && 'Verifying...'}
+                      {!step22Loading && 'Verify'}
+                    </Button>
+                  )}
+                </>
               )}
             </div>
           </div>

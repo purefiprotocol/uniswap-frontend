@@ -1,5 +1,5 @@
 import { FC, useMemo, useState } from 'react';
-import { Button, Flex, Modal, StepProps, Steps } from 'antd';
+import { Button, Flex, Modal } from 'antd';
 import { useAccount, useSwitchChain } from 'wagmi';
 import { createPublicClient, createWalletClient, custom, http } from 'viem';
 import { toast } from 'react-toastify';
@@ -7,14 +7,9 @@ import { toast } from 'react-toastify';
 import { ExportOutlined } from '@ant-design/icons';
 
 import { TokenConfig } from '@/models';
-import { DEFAULT_CHAIN, getConfig } from '@/config';
+import { DEFAULT_CHAIN, DEFAULT_CHAIN_VIEM, getConfig } from '@/config';
 
-import {
-  checkIfChainSupported,
-  getTransactionLink,
-  sleep,
-  sortTokens,
-} from '@/utils';
+import { checkIfChainSupported, getTransactionLink, sortTokens } from '@/utils';
 
 import { AutoHeight } from '../AutoHeight';
 import { DashboardLink, TxnLink } from '../TxnLink';
@@ -39,7 +34,7 @@ const FaucetModal: FC<FaucetModalProps> = (props) => {
   const isReady = isWalletConnected && isChainSupported;
 
   const publicClientConfig = {
-    chain: isReady ? account.chain : DEFAULT_CHAIN,
+    chain: isReady ? account.chain : DEFAULT_CHAIN_VIEM,
     transport: isReady ? custom((window as any).ethereum!) : http(),
   };
 

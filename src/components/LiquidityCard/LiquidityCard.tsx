@@ -29,7 +29,7 @@ import {
 import classNames from 'classnames';
 
 import { useConnectModal, useLiquidityHelper, useTokenBalance } from '@/hooks';
-import { DEFAULT_CHAIN, getConfig } from '@/config';
+import { DEFAULT_CHAIN_VIEM, getConfig } from '@/config';
 import {
   DirectionEnum,
   FeeTierEnum,
@@ -69,7 +69,7 @@ const SwapCard: FC = () => {
   const isReadOnlyMode = isWalletConnected && !isChainSupported;
 
   const publicClientConfig = {
-    chain: isReady ? account.chain : DEFAULT_CHAIN,
+    chain: isReady ? account.chain : DEFAULT_CHAIN_VIEM,
     transport: isReady ? custom((window as any).ethereum!) : http(),
   };
 
@@ -83,8 +83,13 @@ const SwapCard: FC = () => {
     [account.chainId],
   );
 
-  const { liquidityRouter, poolManagerViewer, liquidityHelper, pools } =
-    theConfig;
+  const {
+    liquidityRouter,
+    poolManagerViewer,
+    liquidityHelper,
+    liquidityHelper2,
+    pools,
+  } = theConfig;
 
   const { calculateAmountsByAmountToken0, calculateAmountsByAmountToken1 } =
     useLiquidityHelper({
@@ -173,7 +178,7 @@ const SwapCard: FC = () => {
   };
 
   const switchChainHandler = () => {
-    switchChain?.({ chainId: DEFAULT_CHAIN.id });
+    switchChain?.({ chainId: DEFAULT_CHAIN_VIEM.id });
   };
 
   useEffect(() => {
@@ -1214,6 +1219,7 @@ const SwapCard: FC = () => {
           token1={token1}
           pool={pool}
           router={liquidityRouter}
+          routerHelper={liquidityHelper2}
           slot0={slot0!}
           slippage={slippage}
           onCancel={closeLiquidityModal}

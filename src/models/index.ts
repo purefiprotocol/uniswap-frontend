@@ -67,6 +67,7 @@ export interface Config {
   swapRouter: ContractConfig;
   liquidityRouter: ContractConfig;
   liquidityHelper: ContractConfig;
+  liquidityHelper2: ContractConfig;
   poolManager: ContractConfig;
   poolManagerViewer: ContractConfig;
   quoter: ContractConfig;

@@ -8,6 +8,7 @@ import {
   formatUnits,
   http,
   parseUnits,
+  Chain,
 } from 'viem';
 import {
   NumberFormatValues,
@@ -29,7 +30,7 @@ import {
 import { QuestionCircleOutlined, SwapOutlined } from '@ant-design/icons';
 
 import { useConnectModal, useTokenBalance, useQuoter } from '@/hooks';
-import { DEFAULT_CHAIN, getConfig } from '@/config';
+import { DEFAULT_CHAIN_VIEM, getConfig } from '@/config';
 import { Slot0, SwapTypeEnum, TokenConfig } from '@/models';
 import {
   DEBOUNCE_DELAY,
@@ -61,7 +62,7 @@ const SwapCard: FC = () => {
   const isReady = isWalletConnected && isChainSupported;
 
   const publicClientConfig = {
-    chain: isReady ? account.chain : DEFAULT_CHAIN,
+    chain: isReady ? account.chain : DEFAULT_CHAIN_VIEM,
     transport: isReady ? custom((window as any).ethereum!) : http(),
   };
 
@@ -136,7 +137,7 @@ const SwapCard: FC = () => {
   };
 
   const switchChainHandler = () => {
-    switchChain?.({ chainId: DEFAULT_CHAIN.id });
+    switchChain?.({ chainId: DEFAULT_CHAIN_VIEM.id });
   };
 
   const maxHandler = () => {

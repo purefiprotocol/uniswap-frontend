@@ -16,16 +16,20 @@ import usdtSrc from '@/assets/icons/usdt.png';
 
 const polygonAmoyConfig: Config = {
   swapRouter: {
-    address: '0x62D340AA89e3953063cF3884693d23cdbb5105cd',
+    address: '0xa4a22f14441F7119Cb4866A302FD39a03C55c942',
     abi: PurefiSwapRouter.abi,
   },
   liquidityRouter: {
-    address: '0x4c2840fFb488CF3651ed5967FFb6C90e3bFbffc2',
+    address: '0xb2fCA63255CA2A7fb884a1C0624c38AE7E5E239D',
     abi: PureFiModifyLiquidityRouter.abi,
   },
   liquidityHelper: {
     address: '0x2A08567d2930EfFb2ea318d40e09Ce8d8178db6e',
     abi: LiquidityHelper.abi,
+  },
+  liquidityHelper2: {
+    address: '0xa831dC3F242EC3eFb441e7bA4348E0f581e7aCB1',
+    abi: PureFiModifyLiquidityRouter.abi,
   },
   poolManager: {
     address: '0x2F81C3A3BbB6580Ca9B588Cc8Adf5590aBe7a7B7',
@@ -36,14 +40,14 @@ const polygonAmoyConfig: Config = {
     abi: PoolManagerViewer.abi,
   },
   quoter: {
-    address: '0x5C874F8b5FF76FC96cf2DEc27f2C65e99b67Ea64',
+    address: '0x169f7adf12b4322094C57680e17b432A88A31AF4',
     abi: Quoter.abi,
   },
   pools: [
     {
-      id: '0x01228ca5fbe9e2d7f852b4296a81bc94f40ae1a1f5a077c8f294c16777f72bbe',
+      id: '0x16109bea5934a9b4d887ee56caa07374970d64e0e05c47a481337cb5a646bcde',
       hook: {
-        address: '0xB746e09e18740B0A5ef316497E5E1cdbCe5B2aE0',
+        address: '0x21D433dbF92b183A9954944DdB4744fA24AF0fE0',
       },
       tickSpacing: 10,
       swapRuleId: DEFAULT_SWAP_RULE_ID,
