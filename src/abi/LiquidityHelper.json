@@ -1,213 +1,254 @@
 {
   "abi": [
     {
-      "type": "function",
+      "inputs": [
+        { "internalType": "uint128", "name": "x", "type": "uint128" },
+        { "internalType": "int128", "name": "y", "type": "int128" }
+      ],
       "name": "addDelta",
-      "inputs": [
-        { "name": "x", "type": "uint128", "internalType": "uint128" },
-        { "name": "y", "type": "int128", "internalType": "int128" }
-      ],
       "outputs": [
-        { "name": "z", "type": "uint128", "internalType": "uint128" }
+        { "internalType": "uint128", "name": "z", "type": "uint128" }
       ],
-      "stateMutability": "pure"
+      "stateMutability": "pure",
+      "type": "function"
     },
     {
-      "type": "function",
-      "name": "calculateLiquidityExactAmount0",
       "inputs": [
-        { "name": "tick", "type": "int24", "internalType": "int24" },
         {
-          "name": "sqrtPriceX96",
-          "type": "uint160",
-          "internalType": "uint160"
+          "internalType": "contract IPoolManager",
+          "name": "manager",
+          "type": "address"
         },
         {
+          "components": [
+            {
+              "internalType": "Currency",
+              "name": "currency0",
+              "type": "address"
+            },
+            {
+              "internalType": "Currency",
+              "name": "currency1",
+              "type": "address"
+            },
+            { "internalType": "uint24", "name": "fee", "type": "uint24" },
+            { "internalType": "int24", "name": "tickSpacing", "type": "int24" },
+            {
+              "internalType": "contract IHooks",
+              "name": "hooks",
+              "type": "address"
+            }
+          ],
+          "internalType": "struct PoolKey",
+          "name": "key",
+          "type": "tuple"
+        },
+        { "internalType": "int24", "name": "tickLower", "type": "int24" },
+        { "internalType": "int24", "name": "tickUpper", "type": "int24" },
+        { "internalType": "uint256", "name": "amount0", "type": "uint256" },
+        { "internalType": "uint256", "name": "amount1", "type": "uint256" }
+      ],
+      "name": "calculateLiquidityDelta",
+      "outputs": [{ "internalType": "uint128", "name": "", "type": "uint128" }],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        { "internalType": "int24", "name": "tick", "type": "int24" },
+        {
+          "internalType": "uint160",
+          "name": "sqrtPriceX96",
+          "type": "uint160"
+        },
+        {
+          "internalType": "uint256",
           "name": "token0Amount",
-          "type": "uint256",
-          "internalType": "uint256"
+          "type": "uint256"
         },
-        { "name": "tickLower", "type": "int24", "internalType": "int24" },
-        { "name": "tickUpper", "type": "int24", "internalType": "int24" }
+        { "internalType": "int24", "name": "tickLower", "type": "int24" },
+        { "internalType": "int24", "name": "tickUpper", "type": "int24" }
       ],
+      "name": "calculateLiquidityExactAmount0",
       "outputs": [
-        { "name": "liquidity", "type": "uint128", "internalType": "uint128" },
-        { "name": "amount0", "type": "int128", "internalType": "int128" },
-        { "name": "amount1", "type": "int128", "internalType": "int128" }
+        { "internalType": "uint128", "name": "liquidity", "type": "uint128" },
+        { "internalType": "int128", "name": "amount0", "type": "int128" },
+        { "internalType": "int128", "name": "amount1", "type": "int128" }
       ],
-      "stateMutability": "pure"
+      "stateMutability": "pure",
+      "type": "function"
     },
     {
-      "type": "function",
-      "name": "calculateLiquidityExactAmount1",
       "inputs": [
-        { "name": "tick", "type": "int24", "internalType": "int24" },
+        { "internalType": "int24", "name": "tick", "type": "int24" },
         {
+          "internalType": "uint160",
           "name": "sqrtPriceX96",
-          "type": "uint160",
-          "internalType": "uint160"
+          "type": "uint160"
         },
         {
+          "internalType": "uint256",
           "name": "token1Amount",
-          "type": "uint256",
-          "internalType": "uint256"
+          "type": "uint256"
         },
-        { "name": "tickLower", "type": "int24", "internalType": "int24" },
-        { "name": "tickUpper", "type": "int24", "internalType": "int24" }
+        { "internalType": "int24", "name": "tickLower", "type": "int24" },
+        { "internalType": "int24", "name": "tickUpper", "type": "int24" }
       ],
+      "name": "calculateLiquidityExactAmount1",
       "outputs": [
-        { "name": "liquidity", "type": "uint128", "internalType": "uint128" },
-        { "name": "amount0", "type": "int128", "internalType": "int128" },
-        { "name": "amount1", "type": "int128", "internalType": "int128" }
+        { "internalType": "uint128", "name": "liquidity", "type": "uint128" },
+        { "internalType": "int128", "name": "amount0", "type": "int128" },
+        { "internalType": "int128", "name": "amount1", "type": "int128" }
       ],
-      "stateMutability": "pure"
+      "stateMutability": "pure",
+      "type": "function"
     },
     {
-      "type": "function",
+      "inputs": [
+        {
+          "internalType": "uint160",
+          "name": "sqrtPriceAX96",
+          "type": "uint160"
+        },
+        {
+          "internalType": "uint160",
+          "name": "sqrtPriceBX96",
+          "type": "uint160"
+        },
+        { "internalType": "uint128", "name": "liquidity", "type": "uint128" }
+      ],
       "name": "getAmount0ForLiquidity",
-      "inputs": [
-        {
-          "name": "sqrtPriceAX96",
-          "type": "uint160",
-          "internalType": "uint160"
-        },
-        {
-          "name": "sqrtPriceBX96",
-          "type": "uint160",
-          "internalType": "uint160"
-        },
-        { "name": "liquidity", "type": "uint128", "internalType": "uint128" }
-      ],
       "outputs": [
-        { "name": "amount0", "type": "uint256", "internalType": "uint256" }
+        { "internalType": "uint256", "name": "amount0", "type": "uint256" }
       ],
-      "stateMutability": "pure"
+      "stateMutability": "pure",
+      "type": "function"
     },
     {
-      "type": "function",
+      "inputs": [
+        {
+          "internalType": "uint160",
+          "name": "sqrtPriceAX96",
+          "type": "uint160"
+        },
+        {
+          "internalType": "uint160",
+          "name": "sqrtPriceBX96",
+          "type": "uint160"
+        },
+        { "internalType": "uint128", "name": "liquidity", "type": "uint128" }
+      ],
       "name": "getAmount1ForLiquidity",
-      "inputs": [
-        {
-          "name": "sqrtPriceAX96",
-          "type": "uint160",
-          "internalType": "uint160"
-        },
-        {
-          "name": "sqrtPriceBX96",
-          "type": "uint160",
-          "internalType": "uint160"
-        },
-        { "name": "liquidity", "type": "uint128", "internalType": "uint128" }
-      ],
       "outputs": [
-        { "name": "amount1", "type": "uint256", "internalType": "uint256" }
+        { "internalType": "uint256", "name": "amount1", "type": "uint256" }
       ],
-      "stateMutability": "pure"
+      "stateMutability": "pure",
+      "type": "function"
     },
     {
-      "type": "function",
+      "inputs": [
+        {
+          "internalType": "uint160",
+          "name": "sqrtPriceX96",
+          "type": "uint160"
+        },
+        {
+          "internalType": "uint160",
+          "name": "sqrtPriceAX96",
+          "type": "uint160"
+        },
+        {
+          "internalType": "uint160",
+          "name": "sqrtPriceBX96",
+          "type": "uint160"
+        },
+        { "internalType": "uint128", "name": "liquidity", "type": "uint128" }
+      ],
       "name": "getAmountsForLiquidity",
-      "inputs": [
-        {
-          "name": "sqrtPriceX96",
-          "type": "uint160",
-          "internalType": "uint160"
-        },
-        {
-          "name": "sqrtPriceAX96",
-          "type": "uint160",
-          "internalType": "uint160"
-        },
-        {
-          "name": "sqrtPriceBX96",
-          "type": "uint160",
-          "internalType": "uint160"
-        },
-        { "name": "liquidity", "type": "uint128", "internalType": "uint128" }
-      ],
       "outputs": [
-        { "name": "amount0", "type": "uint256", "internalType": "uint256" },
-        { "name": "amount1", "type": "uint256", "internalType": "uint256" }
+        { "internalType": "uint256", "name": "amount0", "type": "uint256" },
+        { "internalType": "uint256", "name": "amount1", "type": "uint256" }
       ],
-      "stateMutability": "pure"
+      "stateMutability": "pure",
+      "type": "function"
     },
     {
-      "type": "function",
+      "inputs": [
+        {
+          "internalType": "uint160",
+          "name": "sqrtPriceAX96",
+          "type": "uint160"
+        },
+        {
+          "internalType": "uint160",
+          "name": "sqrtPriceBX96",
+          "type": "uint160"
+        },
+        { "internalType": "uint256", "name": "amount0", "type": "uint256" }
+      ],
       "name": "getLiquidityForAmount0",
-      "inputs": [
-        {
-          "name": "sqrtPriceAX96",
-          "type": "uint160",
-          "internalType": "uint160"
-        },
-        {
-          "name": "sqrtPriceBX96",
-          "type": "uint160",
-          "internalType": "uint160"
-        },
-        { "name": "amount0", "type": "uint256", "internalType": "uint256" }
-      ],
       "outputs": [
-        { "name": "liquidity", "type": "uint128", "internalType": "uint128" }
+        { "internalType": "uint128", "name": "liquidity", "type": "uint128" }
       ],
-      "stateMutability": "pure"
+      "stateMutability": "pure",
+      "type": "function"
     },
     {
-      "type": "function",
+      "inputs": [
+        {
+          "internalType": "uint160",
+          "name": "sqrtPriceAX96",
+          "type": "uint160"
+        },
+        {
+          "internalType": "uint160",
+          "name": "sqrtPriceBX96",
+          "type": "uint160"
+        },
+        { "internalType": "uint256", "name": "amount1", "type": "uint256" }
+      ],
       "name": "getLiquidityForAmount1",
-      "inputs": [
-        {
-          "name": "sqrtPriceAX96",
-          "type": "uint160",
-          "internalType": "uint160"
-        },
-        {
-          "name": "sqrtPriceBX96",
-          "type": "uint160",
-          "internalType": "uint160"
-        },
-        { "name": "amount1", "type": "uint256", "internalType": "uint256" }
-      ],
       "outputs": [
-        { "name": "liquidity", "type": "uint128", "internalType": "uint128" }
+        { "internalType": "uint128", "name": "liquidity", "type": "uint128" }
       ],
-      "stateMutability": "pure"
+      "stateMutability": "pure",
+      "type": "function"
     },
     {
-      "type": "function",
-      "name": "getLiquidityForAmounts",
       "inputs": [
         {
+          "internalType": "uint160",
           "name": "sqrtPriceX96",
-          "type": "uint160",
-          "internalType": "uint160"
+          "type": "uint160"
         },
         {
+          "internalType": "uint160",
           "name": "sqrtPriceAX96",
-          "type": "uint160",
-          "internalType": "uint160"
+          "type": "uint160"
         },
         {
+          "internalType": "uint160",
           "name": "sqrtPriceBX96",
-          "type": "uint160",
-          "internalType": "uint160"
+          "type": "uint160"
         },
-        { "name": "amount0", "type": "uint256", "internalType": "uint256" },
-        { "name": "amount1", "type": "uint256", "internalType": "uint256" }
+        { "internalType": "uint256", "name": "amount0", "type": "uint256" },
+        { "internalType": "uint256", "name": "amount1", "type": "uint256" }
       ],
+      "name": "getLiquidityForAmounts",
       "outputs": [
-        { "name": "liquidity", "type": "uint128", "internalType": "uint128" }
+        { "internalType": "uint128", "name": "liquidity", "type": "uint128" }
       ],
-      "stateMutability": "pure"
+      "stateMutability": "pure",
+      "type": "function"
     },
     {
-      "type": "function",
+      "inputs": [{ "internalType": "uint256", "name": "x", "type": "uint256" }],
       "name": "toUint128",
-      "inputs": [{ "name": "x", "type": "uint256", "internalType": "uint256" }],
       "outputs": [
-        { "name": "y", "type": "uint128", "internalType": "uint128" }
+        { "internalType": "uint128", "name": "y", "type": "uint128" }
       ],
-      "stateMutability": "pure"
+      "stateMutability": "pure",
+      "type": "function"
     }
   ]
 }

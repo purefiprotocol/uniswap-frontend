@@ -3,10 +3,10 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { createAppKit } from '@reown/appkit/react';
 import { WagmiProvider } from 'wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { PureFI, KycWidget } from '@purefi/kyc-sdk';
+import { KycWidget } from '@purefi/kyc-sdk';
 import { toast } from 'react-toastify';
 import { ConfigProvider } from 'antd';
-import { polygonAmoy } from 'viem/chains';
+import { polygonAmoy, sepolia, bsc } from 'viem/chains';
 import {
   wagmiAdapter,
   PROJECT_ID,
@@ -16,7 +16,7 @@ import {
 } from './config';
 import { Layout } from './components';
 import { Home, Kyc, Liquidity, NotFound } from './pages';
-import polygonSrc from './assets/icons/polygon.webp';
+import sepoliaSrc from './assets/icons/sepolia.png';
 
 const queryClient = new QueryClient();
 
@@ -61,7 +61,7 @@ createAppKit({
     '--w3m-accent': '#fc72ff',
   },
   chainImages: {
-    [polygonAmoy.id]: polygonSrc,
+    [sepolia.id]: sepoliaSrc,
   },
   termsConditionsUrl: `${window.location.origin}/terms.pdf`,
   allWallets: 'SHOW',
@@ -77,8 +77,8 @@ createAppKit({
 
 const App: FC = () => {
   useEffect(() => {
-    PureFI.setIssuerUrl(import.meta.env.VITE_API_URL);
     KycWidget.setConfig({
+      issuerUrl: import.meta.env.VITE_API_URL,
       onSuccess: toast.success,
       onWarning: toast.warn,
       onError: toast.error,

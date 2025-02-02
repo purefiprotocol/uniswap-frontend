@@ -22,6 +22,7 @@ import {
   maxUint256,
   parseUnits,
   toBytes,
+  zeroAddress,
 } from 'viem';
 import { toast } from 'react-toastify';
 import {
@@ -42,6 +43,7 @@ import {
   SolutionOutlined,
   WarningOutlined,
   CloseCircleOutlined,
+  ExportOutlined,
 } from '@ant-design/icons';
 import classNames from 'classnames';
 
@@ -51,7 +53,7 @@ import { ContractConfig, PoolConfig, TokenConfig, Slot0 } from '@/models';
 import { checkIfChainSupported, getTransactionLink, sleep } from '@/utils';
 
 import { AutoHeight } from '../AutoHeight';
-import { DashboardLink, TxnLink } from '../TxnLink';
+import { TxnLink } from '../TxnLink';
 
 import styles from './LiquidityModal.module.scss';
 
@@ -66,6 +68,7 @@ interface LiquidityModalProps {
   tickUpper: number;
   token0: TokenConfig;
   token1: TokenConfig;
+  poolManager: ContractConfig;
   pool: PoolConfig;
   router: ContractConfig;
   routerHelper: ContractConfig;
@@ -121,6 +124,7 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
     tickUpper,
     token0,
     token1,
+    poolManager,
     pool,
     router,
     routerHelper,
@@ -165,6 +169,7 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
   const [step3Loading, setStep3Loading] = useState(false);
   const [step4Loading, setStep4Loading] = useState(false);
   const [addCompleted, setAddCompleted] = useState(false);
+  const [addTxnLink, setAddTxnLink] = useState<string | null>(null);
 
   const [frozenLeftTokenAmount, setFrozenLeftTokenAmount] = useState('');
   const [frozenRightTokenAmount, setFrozenRightTokenAmount] = useState('');
@@ -227,6 +232,7 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
     setPurefiError(null);
     setIsKycAllowed(false);
     setAddCompleted(false);
+    setAddTxnLink(null);
 
     setApproveLoadingMessage('Confirm approve transaction');
     setAddLoadingMessage('Confirm transaction');
@@ -237,6 +243,10 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
       chain: account.chain!,
       transport: custom((window as any).ethereum!),
     });
+
+    if (leftToken.address === zeroAddress) {
+      return 0n;
+    }
 
     const [address] = await walletClient.getAddresses();
 
@@ -261,6 +271,10 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
     });
 
     const [address] = await walletClient.getAddresses();
+
+    if (rightToken.address === zeroAddress) {
+      return 0n;
+    }
 
     const allowancePromise = publicClient.readContract({
       address: rightToken.address,
@@ -296,9 +310,14 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
         setCurrentAllowanceRight(rightAllowance);
 
         const isLeftAllowanceOk =
-          leftAllowance >= parseUnits(leftTokenAmount, leftToken.decimals);
+          leftToken.address === zeroAddress
+            ? true
+            : leftAllowance >= parseUnits(leftTokenAmount, leftToken.decimals);
         const isRightAllowanceOk =
-          rightAllowance >= parseUnits(rightTokenAmount, rightToken.decimals);
+          rightToken.address === zeroAddress
+            ? true
+            : rightAllowance >=
+              parseUnits(rightTokenAmount, rightToken.decimals);
 
         if (isLeftAllowanceOk) {
           setFrozenLeftTokenAmount(leftTokenAmount);
@@ -387,16 +406,20 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
         setCurrentAllowanceLeft(leftAllowance);
 
         const isLeftAllowanceOk =
-          leftAllowance >= parseUnits(leftTokenAmount, leftToken.decimals);
+          leftToken.address === zeroAddress
+            ? true
+            : leftAllowance >= parseUnits(leftTokenAmount, leftToken.decimals);
 
         if (isLeftAllowanceOk) {
           setFrozenLeftTokenAmount(leftTokenAmount);
         }
 
         const isRightAllowanceOk =
-          currentAllowanceRight !== null &&
-          currentAllowanceRight >=
-            parseUnits(rightTokenAmount, rightToken.decimals);
+          rightToken.address === zeroAddress
+            ? true
+            : currentAllowanceRight !== null &&
+              currentAllowanceRight >=
+                parseUnits(rightTokenAmount, rightToken.decimals);
 
         if (isRightAllowanceOk) {
           setFrozenRightTokenAmount(rightTokenAmount);
@@ -491,20 +514,24 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
         toast.success(toastContent);
 
         const rightAllowance = await getAllowanceRight();
-
         setCurrentAllowanceRight(rightAllowance);
 
         const isRightAllowanceOk =
-          rightAllowance >= parseUnits(rightTokenAmount, rightToken.decimals);
+          rightToken.address === zeroAddress
+            ? true
+            : rightAllowance >=
+              parseUnits(rightTokenAmount, rightToken.decimals);
 
         if (isRightAllowanceOk) {
           setFrozenRightTokenAmount(rightTokenAmount);
         }
 
         const isLeftAllowanceOk =
-          currentAllowanceLeft !== null &&
-          currentAllowanceLeft >=
-            parseUnits(leftTokenAmount, leftToken.decimals);
+          leftToken.address === zeroAddress
+            ? true
+            : currentAllowanceLeft !== null &&
+              currentAllowanceLeft >=
+                parseUnits(leftTokenAmount, leftToken.decimals);
 
         if (isLeftAllowanceOk) {
           setFrozenLeftTokenAmount(leftTokenAmount);
@@ -747,6 +774,7 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
       }
 
       const calculateLiquidityDeltaArgs = [
+        poolManager.address,
         poolKey,
         frozenTickLower,
         frozenTickUpper,
@@ -785,6 +813,11 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
         abi: router.abi,
         functionName: 'modifyLiquidity',
         args,
+        value: [leftToken.address, rightToken.address].some(
+          (item) => item === zeroAddress,
+        )
+          ? parseUnits(frozenLeftTokenAmount, leftToken.decimals)
+          : undefined,
       });
 
       const sleepPromise = sleep(1000);
@@ -885,6 +918,7 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
       }
 
       const calculateLiquidityDeltaArgs = [
+        poolManager.address,
         poolKey,
         frozenTickLower,
         frozenTickUpper,
@@ -923,7 +957,16 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
         abi: router.abi,
         functionName: 'modifyLiquidity',
         args,
+        value: [leftToken.address, rightToken.address].some(
+          (item) => item === zeroAddress,
+        )
+          ? parseUnits(frozenLeftTokenAmount, leftToken.decimals)
+          : undefined,
       });
+
+      const link = getTransactionLink(addHash, account.chain);
+
+      setAddTxnLink(link);
 
       setAddLoadingMessage('Transaction in progress');
 
@@ -933,15 +976,7 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
 
       const isSuccess = addReceipt.status === 'success';
 
-      const link = getTransactionLink(
-        addReceipt.transactionHash,
-        account.chain,
-      );
-
-      const toastContent = <TxnLink href={link} title="Add Liquidity" />;
-
       if (isSuccess) {
-        toast.success(toastContent);
         setStepItems((prev) => {
           const step1 = prev[0];
           const step2 = prev[1];
@@ -955,6 +990,8 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
 
         setAddCompleted(true);
       } else {
+        const toastContent = <TxnLink href={link} title="Add Liquidity" />;
+
         toast.error(toastContent);
         setStepItems((prev) => {
           const step1 = prev[0];
@@ -1031,15 +1068,20 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
     [styles.allowance]: true,
     [styles.allowance__ok]:
       currentAllowanceLeft !== null &&
-      currentAllowanceLeft >= parseUnits(leftTokenAmount, leftToken.decimals),
+      (leftToken.address === zeroAddress
+        ? true
+        : currentAllowanceLeft >=
+          parseUnits(leftTokenAmount, leftToken.decimals)),
   });
 
   const rightAllowanceClassName = classNames({
     [styles.allowance]: true,
     [styles.allowance__ok]:
       currentAllowanceRight !== null &&
-      currentAllowanceRight >=
-        parseUnits(rightTokenAmount, rightToken.decimals),
+      (rightToken.address === zeroAddress
+        ? true
+        : currentAllowanceRight >=
+          parseUnits(rightTokenAmount, rightToken.decimals)),
   });
 
   return (
@@ -1099,85 +1141,105 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
 
                     {!approveLoading && (
                       <Flex gap="middle" vertical>
-                        <Flex
-                          className={leftAllowanceClassName}
-                          gap="small"
-                          vertical
-                        >
-                          <Flex className={styles.item} justify="space-between">
-                            <div
-                              className={`${styles.item__title} ${styles.item__title_margin}`}
+                        {leftToken.address !== zeroAddress && (
+                          <Flex
+                            className={leftAllowanceClassName}
+                            gap="small"
+                            vertical
+                          >
+                            <Flex
+                              className={styles.item}
+                              justify="space-between"
                             >
-                              Current allowance
-                            </div>
-                            <div className={styles.white}>
-                              {currentAllowanceLeft !== null && (
+                              <div
+                                className={`${styles.item__title} ${styles.item__title_margin}`}
+                              >
+                                Current allowance
+                              </div>
+                              <div className={styles.white}>
+                                {currentAllowanceLeft !== null && (
+                                  <Typography.Text
+                                    style={{ maxWidth: '100%' }}
+                                    ellipsis={{
+                                      suffix: ` ${leftToken.symbol}`,
+                                    }}
+                                  >
+                                    {formatUnits(
+                                      currentAllowanceLeft,
+                                      leftToken.decimals,
+                                    )}
+                                  </Typography.Text>
+                                )}
+                              </div>
+                            </Flex>
+
+                            <Flex
+                              className={styles.item}
+                              justify="space-between"
+                            >
+                              <div className={styles.item__title_margin}>
+                                Required allowance
+                              </div>
+                              <div className={styles.white}>
                                 <Typography.Text
                                   style={{ maxWidth: '100%' }}
                                   ellipsis={{ suffix: ` ${leftToken.symbol}` }}
                                 >
-                                  {formatUnits(
-                                    currentAllowanceLeft,
-                                    leftToken.decimals,
-                                  )}
+                                  {leftTokenAmount.toString()}
                                 </Typography.Text>
-                              )}
-                            </div>
+                              </div>
+                            </Flex>
                           </Flex>
+                        )}
 
-                          <Flex className={styles.item} justify="space-between">
-                            <div className={styles.item__title_margin}>
-                              Required allowance
-                            </div>
-                            <div className={styles.white}>
-                              <Typography.Text
-                                style={{ maxWidth: '100%' }}
-                                ellipsis={{ suffix: ` ${leftToken.symbol}` }}
-                              >
-                                {leftTokenAmount.toString()}
-                              </Typography.Text>
-                            </div>
-                          </Flex>
-                        </Flex>
+                        {rightToken.address !== zeroAddress && (
+                          <Flex
+                            className={rightAllowanceClassName}
+                            gap="small"
+                            vertical
+                          >
+                            <Flex
+                              className={styles.item}
+                              justify="space-between"
+                            >
+                              <div className={styles.item__title}>
+                                Current allowance
+                              </div>
+                              <div className={styles.white}>
+                                {currentAllowanceRight !== null && (
+                                  <Typography.Text
+                                    style={{ maxWidth: '100%' }}
+                                    ellipsis={{
+                                      suffix: ` ${rightToken.symbol}`,
+                                    }}
+                                  >
+                                    {formatUnits(
+                                      currentAllowanceRight,
+                                      rightToken.decimals,
+                                    )}
+                                  </Typography.Text>
+                                )}
+                              </div>
+                            </Flex>
 
-                        <Flex
-                          className={rightAllowanceClassName}
-                          gap="small"
-                          vertical
-                        >
-                          <Flex className={styles.item} justify="space-between">
-                            <div className={styles.item__title}>
-                              Current allowance
-                            </div>
-                            <div className={styles.white}>
-                              {currentAllowanceRight !== null && (
+                            <Flex
+                              className={styles.item}
+                              justify="space-between"
+                            >
+                              <div className={styles.item__title_margin}>
+                                Required allowance
+                              </div>
+                              <div className={styles.white}>
                                 <Typography.Text
                                   style={{ maxWidth: '100%' }}
                                   ellipsis={{ suffix: ` ${rightToken.symbol}` }}
                                 >
-                                  {formatUnits(
-                                    currentAllowanceRight,
-                                    rightToken.decimals,
-                                  )}
+                                  {rightTokenAmount.toString()}
                                 </Typography.Text>
-                              )}
-                            </div>
+                              </div>
+                            </Flex>
                           </Flex>
-
-                          <Flex className={styles.item} justify="space-between">
-                            <div className={styles.item__title_margin}>
-                              Required allowance
-                            </div>
-                            <div className={styles.white}>
-                              <Typography.Text
-                                style={{ maxWidth: '100%' }}
-                                ellipsis={{ suffix: ` ${rightToken.symbol}` }}
-                              >
-                                {rightTokenAmount.toString()}
-                              </Typography.Text>
-                            </div>
-                          </Flex>
-                        </Flex>
+                        )}
                       </Flex>
                     )}
                   </>
@@ -1199,6 +1261,7 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
               {!step1Loading && (
                 <>
                   {currentAllowanceLeft !== null &&
+                    leftToken.address !== zeroAddress &&
                     currentAllowanceLeft <
                       parseUnits(leftTokenAmount, leftToken.decimals) && (
                       <Button
@@ -1212,6 +1275,7 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
                     )}
 
                   {currentAllowanceRight !== null &&
+                    rightToken.address !== zeroAddress &&
                     currentAllowanceRight <
                       parseUnits(rightTokenAmount, rightToken.decimals) && (
                       <Button
@@ -1416,11 +1480,38 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
                 )}
 
                 {!step4Loading && addError && (
-                  <Flex gap="small" vertical style={{ padding: 30 }}>
-                    <div style={{ fontSize: 20, color: '#ff4d4f' }}>
-                      Transaction failed
+                  <Flex gap="small" vertical style={{ padding: '0 30px' }}>
+                    <div className={styles.loader__container}>
+                      <div className={styles.loader__message}>
+                        <div style={{ marginBottom: 5 }}>
+                          Transaction failed
+                        </div>
+                        {!!addTxnLink && (
+                          <a
+                            href={addTxnLink}
+                            target="_blank"
+                            rel="noreferrer noopener"
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: 16,
+                            }}
+                          >
+                            <div>Explorer</div>
+                            <div style={{ marginLeft: 5 }}>
+                              <ExportOutlined style={{ fontSize: 14 }} />
+                            </div>
+                          </a>
+                        )}
+                      </div>
+                      <div className={styles.loader__success}>
+                        <CloseCircleOutlined
+                          style={{ fontSize: 54, color: '#ff4d4f' }}
+                        />
+                      </div>
+                      <div>{addError}</div>
                     </div>
-                    <div>{addError}</div>
                   </Flex>
                 )}
 
@@ -1428,7 +1519,25 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
                   <Flex gap="small" vertical style={{ padding: '0 30px' }}>
                     <div className={styles.loader__container}>
                       <div className={styles.loader__message}>
-                        Liquidity added!
+                        <div style={{ marginBottom: 5 }}>Liquidity added!</div>
+                        {!!addTxnLink && (
+                          <a
+                            href={addTxnLink}
+                            target="_blank"
+                            rel="noreferrer noopener"
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: 16,
+                            }}
+                          >
+                            <div>Explorer</div>
+                            <div style={{ marginLeft: 5 }}>
+                              <ExportOutlined style={{ fontSize: 14 }} />
+                            </div>
+                          </a>
+                        )}
                       </div>
                       <div className={styles.loader__success}>
                         <CheckCircleOutlined />
@@ -1459,7 +1568,15 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
             </div>
 
             <div className={styles.step__footer}>
-              {!addCompleted && (
+              {addError || addCompleted ? (
+                <Button
+                  className={styles.theButton}
+                  onClick={finishHandler}
+                  block
+                >
+                  Done
+                </Button>
+              ) : (
                 <Button
                   className={styles.theButton}
                   onClick={addLiquidityHandler}
@@ -1467,16 +1584,6 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
                   block
                 >
                   Add Liquidity
-                </Button>
-              )}
-
-              {addCompleted && (
-                <Button
-                  className={styles.theButton}
-                  onClick={finishHandler}
-                  block
-                >
-                  Done
                 </Button>
               )}
             </div>

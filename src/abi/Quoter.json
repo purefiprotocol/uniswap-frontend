@@ -1,528 +1,467 @@
 {
   "abi": [
     {
-      "type": "constructor",
       "inputs": [
         {
+          "internalType": "contract IPoolManager",
           "name": "_poolManager",
-          "type": "address",
-          "internalType": "contract IPoolManager"
+          "type": "address"
         }
       ],
-      "stateMutability": "nonpayable"
+      "stateMutability": "nonpayable",
+      "type": "constructor"
     },
     {
-      "type": "function",
-      "name": "_quoteExactInput",
       "inputs": [
-        {
-          "name": "params",
-          "type": "tuple",
-          "internalType": "struct IQuoter.QuoteExactParams",
-          "components": [
-            {
-              "name": "exactCurrency",
-              "type": "address",
-              "internalType": "Currency"
-            },
-            {
-              "name": "path",
-              "type": "tuple[]",
-              "internalType": "struct PathKey[]",
-              "components": [
-                {
-                  "name": "intermediateCurrency",
-                  "type": "address",
-                  "internalType": "Currency"
-                },
-                { "name": "fee", "type": "uint24", "internalType": "uint24" },
-                {
-                  "name": "tickSpacing",
-                  "type": "int24",
-                  "internalType": "int24"
-                },
-                {
-                  "name": "hooks",
-                  "type": "address",
-                  "internalType": "contract IHooks"
-                },
-                { "name": "hookData", "type": "bytes", "internalType": "bytes" }
-              ]
-            },
-            {
-              "name": "exactAmount",
-              "type": "uint128",
-              "internalType": "uint128"
-            }
-          ]
-        }
+        { "internalType": "PoolId", "name": "poolId", "type": "bytes32" }
       ],
-      "outputs": [{ "name": "", "type": "bytes", "internalType": "bytes" }],
-      "stateMutability": "nonpayable"
+      "name": "NotEnoughLiquidity",
+      "type": "error"
     },
+    { "inputs": [], "name": "NotPoolManager", "type": "error" },
+    { "inputs": [], "name": "NotSelf", "type": "error" },
     {
-      "type": "function",
-      "name": "_quoteExactInputSingle",
       "inputs": [
-        {
-          "name": "params",
-          "type": "tuple",
-          "internalType": "struct IQuoter.QuoteExactSingleParams",
-          "components": [
-            {
-              "name": "poolKey",
-              "type": "tuple",
-              "internalType": "struct PoolKey",
-              "components": [
-                {
-                  "name": "currency0",
-                  "type": "address",
-                  "internalType": "Currency"
-                },
-                {
-                  "name": "currency1",
-                  "type": "address",
-                  "internalType": "Currency"
-                },
-                { "name": "fee", "type": "uint24", "internalType": "uint24" },
-                {
-                  "name": "tickSpacing",
-                  "type": "int24",
-                  "internalType": "int24"
-                },
-                {
-                  "name": "hooks",
-                  "type": "address",
-                  "internalType": "contract IHooks"
-                }
-              ]
-            },
-            { "name": "zeroForOne", "type": "bool", "internalType": "bool" },
-            {
-              "name": "exactAmount",
-              "type": "uint128",
-              "internalType": "uint128"
-            },
-            {
-              "name": "sqrtPriceLimitX96",
-              "type": "uint160",
-              "internalType": "uint160"
-            },
-            { "name": "hookData", "type": "bytes", "internalType": "bytes" }
-          ]
-        }
+        { "internalType": "uint256", "name": "amount", "type": "uint256" }
       ],
-      "outputs": [{ "name": "", "type": "bytes", "internalType": "bytes" }],
-      "stateMutability": "nonpayable"
+      "name": "QuoteSwap",
+      "type": "error"
     },
+    { "inputs": [], "name": "UnexpectedCallSuccess", "type": "error" },
     {
-      "type": "function",
-      "name": "_quoteExactOutput",
       "inputs": [
-        {
-          "name": "params",
-          "type": "tuple",
-          "internalType": "struct IQuoter.QuoteExactParams",
-          "components": [
-            {
-              "name": "exactCurrency",
-              "type": "address",
-              "internalType": "Currency"
-            },
-            {
-              "name": "path",
-              "type": "tuple[]",
-              "internalType": "struct PathKey[]",
-              "components": [
-                {
-                  "name": "intermediateCurrency",
-                  "type": "address",
-                  "internalType": "Currency"
-                },
-                { "name": "fee", "type": "uint24", "internalType": "uint24" },
-                {
-                  "name": "tickSpacing",
-                  "type": "int24",
-                  "internalType": "int24"
-                },
-                {
-                  "name": "hooks",
-                  "type": "address",
-                  "internalType": "contract IHooks"
-                },
-                { "name": "hookData", "type": "bytes", "internalType": "bytes" }
-              ]
-            },
-            {
-              "name": "exactAmount",
-              "type": "uint128",
-              "internalType": "uint128"
-            }
-          ]
-        }
+        { "internalType": "bytes", "name": "revertData", "type": "bytes" }
       ],
-      "outputs": [{ "name": "", "type": "bytes", "internalType": "bytes" }],
-      "stateMutability": "nonpayable"
-    },
-    {
-      "type": "function",
-      "name": "_quoteExactOutputSingle",
-      "inputs": [
-        {
-          "name": "params",
-          "type": "tuple",
-          "internalType": "struct IQuoter.QuoteExactSingleParams",
-          "components": [
-            {
-              "name": "poolKey",
-              "type": "tuple",
-              "internalType": "struct PoolKey",
-              "components": [
-                {
-                  "name": "currency0",
-                  "type": "address",
-                  "internalType": "Currency"
-                },
-                {
-                  "name": "currency1",
-                  "type": "address",
-                  "internalType": "Currency"
-                },
-                { "name": "fee", "type": "uint24", "internalType": "uint24" },
-                {
-                  "name": "tickSpacing",
-                  "type": "int24",
-                  "internalType": "int24"
-                },
-                {
-                  "name": "hooks",
-                  "type": "address",
-                  "internalType": "contract IHooks"
-                }
-              ]
-            },
-            { "name": "zeroForOne", "type": "bool", "internalType": "bool" },
-            {
-              "name": "exactAmount",
-              "type": "uint128",
-              "internalType": "uint128"
-            },
-            {
-              "name": "sqrtPriceLimitX96",
-              "type": "uint160",
-              "internalType": "uint160"
-            },
-            { "name": "hookData", "type": "bytes", "internalType": "bytes" }
-          ]
-        }
-      ],
-      "outputs": [{ "name": "", "type": "bytes", "internalType": "bytes" }],
-      "stateMutability": "nonpayable"
-    },
-    {
-      "type": "function",
-      "name": "poolManager",
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "",
-          "type": "address",
-          "internalType": "contract IPoolManager"
-        }
-      ],
-      "stateMutability": "view"
-    },
-    {
-      "type": "function",
-      "name": "quoteExactInput",
-      "inputs": [
-        {
-          "name": "params",
-          "type": "tuple",
-          "internalType": "struct IQuoter.QuoteExactParams",
-          "components": [
-            {
-              "name": "exactCurrency",
-              "type": "address",
-              "internalType": "Currency"
-            },
-            {
-              "name": "path",
-              "type": "tuple[]",
-              "internalType": "struct PathKey[]",
-              "components": [
-                {
-                  "name": "intermediateCurrency",
-                  "type": "address",
-                  "internalType": "Currency"
-                },
-                { "name": "fee", "type": "uint24", "internalType": "uint24" },
-                {
-                  "name": "tickSpacing",
-                  "type": "int24",
-                  "internalType": "int24"
-                },
-                {
-                  "name": "hooks",
-                  "type": "address",
-                  "internalType": "contract IHooks"
-                },
-                { "name": "hookData", "type": "bytes", "internalType": "bytes" }
-              ]
-            },
-            {
-              "name": "exactAmount",
-              "type": "uint128",
-              "internalType": "uint128"
-            }
-          ]
-        }
-      ],
-      "outputs": [
-        {
-          "name": "deltaAmounts",
-          "type": "int128[]",
-          "internalType": "int128[]"
-        },
-        {
-          "name": "sqrtPriceX96AfterList",
-          "type": "uint160[]",
-          "internalType": "uint160[]"
-        },
-        {
-          "name": "initializedTicksLoadedList",
-          "type": "uint32[]",
-          "internalType": "uint32[]"
-        }
-      ],
-      "stateMutability": "nonpayable"
-    },
-    {
-      "type": "function",
-      "name": "quoteExactInputSingle",
-      "inputs": [
-        {
-          "name": "params",
-          "type": "tuple",
-          "internalType": "struct IQuoter.QuoteExactSingleParams",
-          "components": [
-            {
-              "name": "poolKey",
-              "type": "tuple",
-              "internalType": "struct PoolKey",
-              "components": [
-                {
-                  "name": "currency0",
-                  "type": "address",
-                  "internalType": "Currency"
-                },
-                {
-                  "name": "currency1",
-                  "type": "address",
-                  "internalType": "Currency"
-                },
-                { "name": "fee", "type": "uint24", "internalType": "uint24" },
-                {
-                  "name": "tickSpacing",
-                  "type": "int24",
-                  "internalType": "int24"
-                },
-                {
-                  "name": "hooks",
-                  "type": "address",
-                  "internalType": "contract IHooks"
-                }
-              ]
-            },
-            { "name": "zeroForOne", "type": "bool", "internalType": "bool" },
-            {
-              "name": "exactAmount",
-              "type": "uint128",
-              "internalType": "uint128"
-            },
-            {
-              "name": "sqrtPriceLimitX96",
-              "type": "uint160",
-              "internalType": "uint160"
-            },
-            { "name": "hookData", "type": "bytes", "internalType": "bytes" }
-          ]
-        }
-      ],
-      "outputs": [
-        {
-          "name": "deltaAmounts",
-          "type": "int128[]",
-          "internalType": "int128[]"
-        },
-        {
-          "name": "sqrtPriceX96After",
-          "type": "uint160",
-          "internalType": "uint160"
-        },
-        {
-          "name": "initializedTicksLoaded",
-          "type": "uint32",
-          "internalType": "uint32"
-        }
-      ],
-      "stateMutability": "nonpayable"
-    },
-    {
-      "type": "function",
-      "name": "quoteExactOutput",
-      "inputs": [
-        {
-          "name": "params",
-          "type": "tuple",
-          "internalType": "struct IQuoter.QuoteExactParams",
-          "components": [
-            {
-              "name": "exactCurrency",
-              "type": "address",
-              "internalType": "Currency"
-            },
-            {
-              "name": "path",
-              "type": "tuple[]",
-              "internalType": "struct PathKey[]",
-              "components": [
-                {
-                  "name": "intermediateCurrency",
-                  "type": "address",
-                  "internalType": "Currency"
-                },
-                { "name": "fee", "type": "uint24", "internalType": "uint24" },
-                {
-                  "name": "tickSpacing",
-                  "type": "int24",
-                  "internalType": "int24"
-                },
-                {
-                  "name": "hooks",
-                  "type": "address",
-                  "internalType": "contract IHooks"
-                },
-                { "name": "hookData", "type": "bytes", "internalType": "bytes" }
-              ]
-            },
-            {
-              "name": "exactAmount",
-              "type": "uint128",
-              "internalType": "uint128"
-            }
-          ]
-        }
-      ],
-      "outputs": [
-        {
-          "name": "deltaAmounts",
-          "type": "int128[]",
-          "internalType": "int128[]"
-        },
-        {
-          "name": "sqrtPriceX96AfterList",
-          "type": "uint160[]",
-          "internalType": "uint160[]"
-        },
-        {
-          "name": "initializedTicksLoadedList",
-          "type": "uint32[]",
-          "internalType": "uint32[]"
-        }
-      ],
-      "stateMutability": "nonpayable"
-    },
-    {
-      "type": "function",
-      "name": "quoteExactOutputSingle",
-      "inputs": [
-        {
-          "name": "params",
-          "type": "tuple",
-          "internalType": "struct IQuoter.QuoteExactSingleParams",
-          "components": [
-            {
-              "name": "poolKey",
-              "type": "tuple",
-              "internalType": "struct PoolKey",
-              "components": [
-                {
-                  "name": "currency0",
-                  "type": "address",
-                  "internalType": "Currency"
-                },
-                {
-                  "name": "currency1",
-                  "type": "address",
-                  "internalType": "Currency"
-                },
-                { "name": "fee", "type": "uint24", "internalType": "uint24" },
-                {
-                  "name": "tickSpacing",
-                  "type": "int24",
-                  "internalType": "int24"
-                },
-                {
-                  "name": "hooks",
-                  "type": "address",
-                  "internalType": "contract IHooks"
-                }
-              ]
-            },
-            { "name": "zeroForOne", "type": "bool", "internalType": "bool" },
-            {
-              "name": "exactAmount",
-              "type": "uint128",
-              "internalType": "uint128"
-            },
-            {
-              "name": "sqrtPriceLimitX96",
-              "type": "uint160",
-              "internalType": "uint160"
-            },
-            { "name": "hookData", "type": "bytes", "internalType": "bytes" }
-          ]
-        }
-      ],
-      "outputs": [
-        {
-          "name": "deltaAmounts",
-          "type": "int128[]",
-          "internalType": "int128[]"
-        },
-        {
-          "name": "sqrtPriceX96After",
-          "type": "uint160",
-          "internalType": "uint160"
-        },
-        {
-          "name": "initializedTicksLoaded",
-          "type": "uint32",
-          "internalType": "uint32"
-        }
-      ],
-      "stateMutability": "nonpayable"
-    },
-    {
-      "type": "function",
-      "name": "unlockCallback",
-      "inputs": [{ "name": "data", "type": "bytes", "internalType": "bytes" }],
-      "outputs": [{ "name": "", "type": "bytes", "internalType": "bytes" }],
-      "stateMutability": "nonpayable"
-    },
-    { "type": "error", "name": "InsufficientAmountOut", "inputs": [] },
-    { "type": "error", "name": "InvalidLockCaller", "inputs": [] },
-    { "type": "error", "name": "InvalidQuoteBatchParams", "inputs": [] },
-    { "type": "error", "name": "LockFailure", "inputs": [] },
-    { "type": "error", "name": "NotPoolManager", "inputs": [] },
-    { "type": "error", "name": "NotSelf", "inputs": [] },
-    {
-      "type": "error",
       "name": "UnexpectedRevertBytes",
+      "type": "error"
+    },
+    {
       "inputs": [
-        { "name": "revertData", "type": "bytes", "internalType": "bytes" }
-      ]
+        {
+          "components": [
+            {
+              "internalType": "Currency",
+              "name": "exactCurrency",
+              "type": "address"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "Currency",
+                  "name": "intermediateCurrency",
+                  "type": "address"
+                },
+                { "internalType": "uint24", "name": "fee", "type": "uint24" },
+                {
+                  "internalType": "int24",
+                  "name": "tickSpacing",
+                  "type": "int24"
+                },
+                {
+                  "internalType": "contract IHooks",
+                  "name": "hooks",
+                  "type": "address"
+                },
+                { "internalType": "bytes", "name": "hookData", "type": "bytes" }
+              ],
+              "internalType": "struct PathKey[]",
+              "name": "path",
+              "type": "tuple[]"
+            },
+            {
+              "internalType": "uint128",
+              "name": "exactAmount",
+              "type": "uint128"
+            }
+          ],
+          "internalType": "struct IV4Quoter.QuoteExactParams",
+          "name": "params",
+          "type": "tuple"
+        }
+      ],
+      "name": "_quoteExactInput",
+      "outputs": [{ "internalType": "bytes", "name": "", "type": "bytes" }],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "components": [
+                {
+                  "internalType": "Currency",
+                  "name": "currency0",
+                  "type": "address"
+                },
+                {
+                  "internalType": "Currency",
+                  "name": "currency1",
+                  "type": "address"
+                },
+                { "internalType": "uint24", "name": "fee", "type": "uint24" },
+                {
+                  "internalType": "int24",
+                  "name": "tickSpacing",
+                  "type": "int24"
+                },
+                {
+                  "internalType": "contract IHooks",
+                  "name": "hooks",
+                  "type": "address"
+                }
+              ],
+              "internalType": "struct PoolKey",
+              "name": "poolKey",
+              "type": "tuple"
+            },
+            { "internalType": "bool", "name": "zeroForOne", "type": "bool" },
+            {
+              "internalType": "uint128",
+              "name": "exactAmount",
+              "type": "uint128"
+            },
+            { "internalType": "bytes", "name": "hookData", "type": "bytes" }
+          ],
+          "internalType": "struct IV4Quoter.QuoteExactSingleParams",
+          "name": "params",
+          "type": "tuple"
+        }
+      ],
+      "name": "_quoteExactInputSingle",
+      "outputs": [{ "internalType": "bytes", "name": "", "type": "bytes" }],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "Currency",
+              "name": "exactCurrency",
+              "type": "address"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "Currency",
+                  "name": "intermediateCurrency",
+                  "type": "address"
+                },
+                { "internalType": "uint24", "name": "fee", "type": "uint24" },
+                {
+                  "internalType": "int24",
+                  "name": "tickSpacing",
+                  "type": "int24"
+                },
+                {
+                  "internalType": "contract IHooks",
+                  "name": "hooks",
+                  "type": "address"
+                },
+                { "internalType": "bytes", "name": "hookData", "type": "bytes" }
+              ],
+              "internalType": "struct PathKey[]",
+              "name": "path",
+              "type": "tuple[]"
+            },
+            {
+              "internalType": "uint128",
+              "name": "exactAmount",
+              "type": "uint128"
+            }
+          ],
+          "internalType": "struct IV4Quoter.QuoteExactParams",
+          "name": "params",
+          "type": "tuple"
+        }
+      ],
+      "name": "_quoteExactOutput",
+      "outputs": [{ "internalType": "bytes", "name": "", "type": "bytes" }],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "components": [
+                {
+                  "internalType": "Currency",
+                  "name": "currency0",
+                  "type": "address"
+                },
+                {
+                  "internalType": "Currency",
+                  "name": "currency1",
+                  "type": "address"
+                },
+                { "internalType": "uint24", "name": "fee", "type": "uint24" },
+                {
+                  "internalType": "int24",
+                  "name": "tickSpacing",
+                  "type": "int24"
+                },
+                {
+                  "internalType": "contract IHooks",
+                  "name": "hooks",
+                  "type": "address"
+                }
+              ],
+              "internalType": "struct PoolKey",
+              "name": "poolKey",
+              "type": "tuple"
+            },
+            { "internalType": "bool", "name": "zeroForOne", "type": "bool" },
+            {
+              "internalType": "uint128",
+              "name": "exactAmount",
+              "type": "uint128"
+            },
+            { "internalType": "bytes", "name": "hookData", "type": "bytes" }
+          ],
+          "internalType": "struct IV4Quoter.QuoteExactSingleParams",
+          "name": "params",
+          "type": "tuple"
+        }
+      ],
+      "name": "_quoteExactOutputSingle",
+      "outputs": [{ "internalType": "bytes", "name": "", "type": "bytes" }],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "poolManager",
+      "outputs": [
+        {
+          "internalType": "contract IPoolManager",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "Currency",
+              "name": "exactCurrency",
+              "type": "address"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "Currency",
+                  "name": "intermediateCurrency",
+                  "type": "address"
+                },
+                { "internalType": "uint24", "name": "fee", "type": "uint24" },
+                {
+                  "internalType": "int24",
+                  "name": "tickSpacing",
+                  "type": "int24"
+                },
+                {
+                  "internalType": "contract IHooks",
+                  "name": "hooks",
+                  "type": "address"
+                },
+                { "internalType": "bytes", "name": "hookData", "type": "bytes" }
+              ],
+              "internalType": "struct PathKey[]",
+              "name": "path",
+              "type": "tuple[]"
+            },
+            {
+              "internalType": "uint128",
+              "name": "exactAmount",
+              "type": "uint128"
+            }
+          ],
+          "internalType": "struct IV4Quoter.QuoteExactParams",
+          "name": "params",
+          "type": "tuple"
+        }
+      ],
+      "name": "quoteExactInput",
+      "outputs": [
+        { "internalType": "uint256", "name": "amountOut", "type": "uint256" },
+        { "internalType": "uint256", "name": "gasEstimate", "type": "uint256" }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "components": [
+                {
+                  "internalType": "Currency",
+                  "name": "currency0",
+                  "type": "address"
+                },
+                {
+                  "internalType": "Currency",
+                  "name": "currency1",
+                  "type": "address"
+                },
+                { "internalType": "uint24", "name": "fee", "type": "uint24" },
+                {
+                  "internalType": "int24",
+                  "name": "tickSpacing",
+                  "type": "int24"
+                },
+                {
+                  "internalType": "contract IHooks",
+                  "name": "hooks",
+                  "type": "address"
+                }
+              ],
+              "internalType": "struct PoolKey",
+              "name": "poolKey",
+              "type": "tuple"
+            },
+            { "internalType": "bool", "name": "zeroForOne", "type": "bool" },
+            {
+              "internalType": "uint128",
+              "name": "exactAmount",
+              "type": "uint128"
+            },
+            { "internalType": "bytes", "name": "hookData", "type": "bytes" }
+          ],
+          "internalType": "struct IV4Quoter.QuoteExactSingleParams",
+          "name": "params",
+          "type": "tuple"
+        }
+      ],
+      "name": "quoteExactInputSingle",
+      "outputs": [
+        { "internalType": "uint256", "name": "amountOut", "type": "uint256" },
+        { "internalType": "uint256", "name": "gasEstimate", "type": "uint256" }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "Currency",
+              "name": "exactCurrency",
+              "type": "address"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "Currency",
+                  "name": "intermediateCurrency",
+                  "type": "address"
+                },
+                { "internalType": "uint24", "name": "fee", "type": "uint24" },
+                {
+                  "internalType": "int24",
+                  "name": "tickSpacing",
+                  "type": "int24"
+                },
+                {
+                  "internalType": "contract IHooks",
+                  "name": "hooks",
+                  "type": "address"
+                },
+                { "internalType": "bytes", "name": "hookData", "type": "bytes" }
+              ],
+              "internalType": "struct PathKey[]",
+              "name": "path",
+              "type": "tuple[]"
+            },
+            {
+              "internalType": "uint128",
+              "name": "exactAmount",
+              "type": "uint128"
+            }
+          ],
+          "internalType": "struct IV4Quoter.QuoteExactParams",
+          "name": "params",
+          "type": "tuple"
+        }
+      ],
+      "name": "quoteExactOutput",
+      "outputs": [
+        { "internalType": "uint256", "name": "amountIn", "type": "uint256" },
+        { "internalType": "uint256", "name": "gasEstimate", "type": "uint256" }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "components": [
+                {
+                  "internalType": "Currency",
+                  "name": "currency0",
+                  "type": "address"
+                },
+                {
+                  "internalType": "Currency",
+                  "name": "currency1",
+                  "type": "address"
+                },
+                { "internalType": "uint24", "name": "fee", "type": "uint24" },
+                {
+                  "internalType": "int24",
+                  "name": "tickSpacing",
+                  "type": "int24"
+                },
+                {
+                  "internalType": "contract IHooks",
+                  "name": "hooks",
+                  "type": "address"
+                }
+              ],
+              "internalType": "struct PoolKey",
+              "name": "poolKey",
+              "type": "tuple"
+            },
+            { "internalType": "bool", "name": "zeroForOne", "type": "bool" },
+            {
+              "internalType": "uint128",
+              "name": "exactAmount",
+              "type": "uint128"
+            },
+            { "internalType": "bytes", "name": "hookData", "type": "bytes" }
+          ],
+          "internalType": "struct IV4Quoter.QuoteExactSingleParams",
+          "name": "params",
+          "type": "tuple"
+        }
+      ],
+      "name": "quoteExactOutputSingle",
+      "outputs": [
+        { "internalType": "uint256", "name": "amountIn", "type": "uint256" },
+        { "internalType": "uint256", "name": "gasEstimate", "type": "uint256" }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [{ "internalType": "bytes", "name": "data", "type": "bytes" }],
+      "name": "unlockCallback",
+      "outputs": [{ "internalType": "bytes", "name": "", "type": "bytes" }],
+      "stateMutability": "nonpayable",
+      "type": "function"
     }
   ]
 }

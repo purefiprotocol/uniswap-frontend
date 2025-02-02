@@ -2,20 +2,14 @@
   "abi": [
     {
       "inputs": [
-        { "internalType": "address", "name": "poolManager", "type": "address" }
+        {
+          "internalType": "contract IPoolManager",
+          "name": "_poolManager",
+          "type": "address"
+        }
       ],
       "stateMutability": "nonpayable",
       "type": "constructor"
-    },
-    {
-      "inputs": [
-        { "internalType": "address", "name": "target", "type": "address" },
-        { "internalType": "Currency", "name": "currency", "type": "address" }
-      ],
-      "name": "currencyDelta",
-      "outputs": [{ "internalType": "int256", "name": "", "type": "int256" }],
-      "stateMutability": "view",
-      "type": "function"
     },
     {
       "inputs": [
@@ -67,13 +61,6 @@
       "outputs": [
         { "internalType": "uint128", "name": "liquidity", "type": "uint128" }
       ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "getNonzeroDeltaCount",
-      "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
       "stateMutability": "view",
       "type": "function"
     },
@@ -151,22 +138,6 @@
         { "internalType": "uint24", "name": "protocolFee", "type": "uint24" },
         { "internalType": "uint24", "name": "lpFee", "type": "uint24" }
       ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "getSyncedCurrency",
-      "outputs": [
-        { "internalType": "Currency", "name": "", "type": "address" }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "getSyncedReserves",
-      "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
       "stateMutability": "view",
       "type": "function"
     },
@@ -249,14 +220,7 @@
     },
     {
       "inputs": [],
-      "name": "isUnlocked",
-      "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "manager",
+      "name": "poolManager",
       "outputs": [
         {
           "internalType": "contract IPoolManager",

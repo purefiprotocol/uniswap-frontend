@@ -1,5 +1,5 @@
-import { useAccount, useReadContracts } from 'wagmi';
-import { erc20Abi, formatUnits } from 'viem';
+import { useAccount, useBalance, useReadContracts } from 'wagmi';
+import { erc20Abi, formatUnits, zeroAddress } from 'viem';
 import { REFETCH_BALANCE_INTERVAL } from '@/constants';
 
 interface TokenBalancePayload {
@@ -46,13 +46,36 @@ const useTokenBalance = (payload: TokenBalancePayload) => {
       enabled:
         isConnected &&
         typeof address !== 'undefined' &&
-        typeof chainId !== 'undefined',
+        typeof chainId !== 'undefined' &&
+        tokenAddress !== zeroAddress,
       refetchOnWindowFocus: true,
       refetchInterval: REFETCH_BALANCE_INTERVAL,
     },
   });
 
-  return result;
+  const nativeResult = useBalance({
+    address,
+    chainId,
+    query: {
+      select: (data) => {
+        return {
+          balance: data.value.toString(),
+          decimals: data.decimals,
+          symbol: data.symbol,
+          formatted: formatUnits(data.value, data.decimals),
+        };
+      },
+      enabled:
+        isConnected &&
+        typeof address !== 'undefined' &&
+        typeof chainId !== 'undefined' &&
+        tokenAddress === zeroAddress,
+      refetchOnWindowFocus: true,
+      refetchInterval: REFETCH_BALANCE_INTERVAL,
+    },
+  });
+
+  return tokenAddress !== zeroAddress ? result : nativeResult;
 };
 
 export { useTokenBalance };

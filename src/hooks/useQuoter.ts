@@ -7,7 +7,7 @@ import {
   SwapTypeEnum,
   TokenConfig,
 } from '@/models';
-import { calculateDelta, sortTokens } from '@/utils';
+import { calculateDelta, sleep, sortTokens } from '@/utils';
 
 interface QuoterParams {
   publicClient: ReturnType<typeof createPublicClient>;
@@ -26,7 +26,7 @@ interface GetQuotePayload {
 interface GetQuoteResult {
   inValue: bigint;
   outValue: bigint;
-  sqrtPriceX96After: bigint;
+  gasEstimate: bigint;
 }
 
 const useQuoter = (quoterParams: QuoterParams) => {
@@ -36,89 +36,57 @@ const useQuoter = (quoterParams: QuoterParams) => {
     swapType: SwapTypeEnum,
     payload: GetQuotePayload,
   ): Promise<GetQuoteResult> => {
-    try {
-      const functionName =
-        swapType === SwapTypeEnum.EIFO
-          ? 'quoteExactInputSingle'
-          : 'quoteExactOutputSingle';
+    const functionName =
+      swapType === SwapTypeEnum.EIFO
+        ? 'quoteExactInputSingle'
+        : 'quoteExactOutputSingle';
 
-      const { pool, slot0, token, value, hookData, slippage } = payload;
+    const { pool, slot0, token, value, hookData, slippage } = payload;
 
-      const [token0, token1] = sortTokens(pool.token0, pool.token1);
+    const [token0, token1] = sortTokens(pool.token0, pool.token1);
 
-      const poolKey = [
-        token0.address,
-        token1.address,
-        slot0.swapFee,
-        pool.tickSpacing,
-        pool.hook.address,
-      ];
+    const poolKey = [
+      token0.address,
+      token1.address,
+      slot0.swapFee,
+      pool.tickSpacing,
+      pool.hook.address,
+    ];
 
-      const zeroForOne =
-        swapType === SwapTypeEnum.EIFO
-          ? token.address.toLowerCase() === token0.address.toLowerCase()
-          : token.address.toLowerCase() !== token0.address.toLowerCase();
+    const zeroForOne =
+      swapType === SwapTypeEnum.EIFO
+        ? token.address.toLowerCase() === token0.address.toLowerCase()
+        : token.address.toLowerCase() !== token0.address.toLowerCase();
 
-      const exactAmount = parseUnits(value, token.decimals);
+    const exactAmount = parseUnits(value, token.decimals);
 
-      const delta = calculateDelta(slot0.sqrtPriceX96, slippage);
+    const delta = calculateDelta(slot0.sqrtPriceX96, slippage);
 
-      const MIN_PRICE_LIMIT = slot0.sqrtPriceX96 - delta;
-      const MAX_PRICE_LIMIT = slot0.sqrtPriceX96 + delta;
+    const MIN_PRICE_LIMIT = slot0.sqrtPriceX96 - delta;
+    const MAX_PRICE_LIMIT = slot0.sqrtPriceX96 + delta;
 
-      const sqrtPriceLimitX96 = zeroForOne ? MIN_PRICE_LIMIT : MAX_PRICE_LIMIT;
+    const sqrtPriceLimitX96 = zeroForOne ? MIN_PRICE_LIMIT : MAX_PRICE_LIMIT;
 
-      const params = [
-        poolKey,
-        zeroForOne,
-        exactAmount,
-        sqrtPriceLimitX96,
-        hookData,
-      ];
+    const params = [poolKey, zeroForOne, exactAmount, hookData];
 
-      const quoteResult = await publicClient.simulateContract({
-        address: quoter.address,
-        abi: quoter.abi,
-        functionName,
-        args: [params],
-      });
+    const sleepPromise = sleep(700);
 
-      const deltaAmounts = quoteResult.result[0] as unknown as [bigint, bigint];
-      const sqrtPriceX96After = quoteResult.result[1] as unknown as bigint;
+    const quoteResultPromise = await publicClient.simulateContract({
+      address: quoter.address,
+      abi: quoter.abi,
+      functionName,
+      args: [params],
+    });
 
-      const token0ValueFromPoolPerspective = deltaAmounts[0];
-      const token1ValueFromPoolPerspective = deltaAmounts[1];
-      const token0ValueFromUserPerspective = -token0ValueFromPoolPerspective;
-      const token1ValueFromUserPerspective = -token1ValueFromPoolPerspective;
-      const absToken0ValueFromUserPerspective =
-        token0ValueFromUserPerspective < 0
-          ? -token0ValueFromUserPerspective
-          : token0ValueFromUserPerspective;
-      const absToken1ValueFromUserPerspective =
-        token1ValueFromUserPerspective < 0
-          ? -token1ValueFromUserPerspective
-          : token1ValueFromUserPerspective;
+    const [quoteResult] = await Promise.all([quoteResultPromise, sleepPromise]);
 
-      const result: GetQuoteResult = {
-        inValue: zeroForOne
-          ? absToken0ValueFromUserPerspective
-          : absToken1ValueFromUserPerspective,
-        outValue: zeroForOne
-          ? absToken1ValueFromUserPerspective
-          : absToken0ValueFromUserPerspective,
-        sqrtPriceX96After,
-      };
-
-      return result;
-    } catch (error: unknown) {
-      console.log('Quoter failure');
-      console.log(error);
-    }
+    const amount = quoteResult.result[0] as unknown as bigint;
+    const gasEstimate = quoteResult.result[1] as unknown as bigint;
 
     const result: GetQuoteResult = {
-      inValue: 0n,
-      outValue: 0n,
-      sqrtPriceX96After: 0n,
+      inValue: swapType === SwapTypeEnum.EIFO ? exactAmount : amount,
+      outValue: swapType === SwapTypeEnum.EIFO ? amount : exactAmount,
+      gasEstimate,
     };
 
     return result;

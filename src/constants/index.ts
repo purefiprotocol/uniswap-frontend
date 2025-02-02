@@ -1,4 +1,4 @@
-export const DEFAULT_SLIPPAGE = 1;
+export const DEFAULT_SLIPPAGE = 5;
 
 export const REFETCH_PRICE_INTERVAL = 10 * 1000;
 

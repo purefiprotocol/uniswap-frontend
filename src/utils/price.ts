@@ -10,46 +10,72 @@ import {
 } from '@/constants';
 import { Slot0 } from '@/models';
 
-function getBaseLog(x: number, y: number) {
-  return Math.log(y) / Math.log(x);
-}
+const Q = 2 ** 96;
 
-const getPriceBySlot0 = (slot0: Slot0) => {
-  return BASE ** slot0.tick;
+const getPriceBySqrtX96 = (
+  sqrtPriceX96: bigint,
+  decimals0: number,
+  decimals1: number,
+) => {
+  const precision = 1e18;
+  return Number(
+    (
+      (Number((sqrtPriceX96 * BigInt(precision)) / BigInt(Q)) / precision) **
+        2 /
+      10 ** (decimals1 - decimals0)
+    ).toFixed(decimals0),
+  );
 };
 
-const getPriceByTick = (tick: number) => {
-  return BASE ** tick;
+const getPriceByTick = (tick: number, decimals0: number, decimals1: number) => {
+  const sqrtPriceX96 = TickMath.getSqrtRatioAtTick(tick);
+  const price = getPriceBySqrtX96(
+    BigInt(sqrtPriceX96.toString()),
+    decimals0,
+    decimals1,
+  );
+  return price;
 };
 
-const correctPriceByPrice = (price: number | string, tickSpacing: number) => {
+const getPriceBySlot0 = (
+  slot0: Slot0,
+  decimals0: number,
+  decimals1: number,
+) => {
+  return getPriceByTick(slot0.tick, decimals0, decimals1);
+};
+
+const correctPriceByPrice = (
+  price: number | string,
+  tickSpacing: number,
+  decimals0: number,
+  decimals1: number,
+) => {
   if (typeof price === 'string') {
     price = Number(price);
   }
 
   const sqrtPrice = Math.sqrt(price);
   const sqrtPriceX96 = JSBI.BigInt(sqrtPrice * 2 ** 96);
-  const minTickCandidate = TickMath.getTickAtSqrtRatio(sqrtPriceX96);
-  const minTick = nearestUsableTick(minTickCandidate, tickSpacing);
-  const priceByTick = getPriceByTick(minTick);
+  const tickCandidate = TickMath.getTickAtSqrtRatio(sqrtPriceX96);
 
-  return [priceByTick, minTick];
+  const theTick = nearestUsableTick(tickCandidate, tickSpacing);
+
+  const priceByTick = getPriceByTick(theTick, decimals0, decimals1);
+
+  return [priceByTick, theTick];
 };
 
-const correctPriceByTick = (tick: number, tickSpacing: number) => {
+const correctPriceByTick = (
+  tick: number,
+  tickSpacing: number,
+  decimals0: number,
+  decimals1: number,
+) => {
   const minTick = nearestUsableTick(tick, tickSpacing);
-  const priceByTick = getPriceByTick(minTick);
+  const priceByTick = getPriceByTick(minTick, decimals0, decimals1);
 
   return [priceByTick, minTick];
-};
-
-const getPriceBySqrtX96 = (sqrtPriceX96: bigint) => {
-  const precision = 1e18;
-  return (
-    (Number((sqrtPriceX96 * BigInt(precision)) / BigInt(2 ** 96)) /
-      precision) **
-    2
-  );
 };
 
 const formatPrice = (price: number, decimals = DEFAULT_PRICE_DECIMALS) =>
