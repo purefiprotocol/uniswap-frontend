@@ -1,8 +1,8 @@
-name: Publish app
+name: STAGE WORKFLOW (AUTO)
 
 on:
   push:
-    branches: [main]
+    branches: [stage]
 
   workflow_dispatch:
 
@@ -16,10 +16,10 @@ jobs:
       DISABLE_ESLINT_PLUGIN: 'true'
 
     steps:
-      - name: Check out main branch
+      - name: Check out stage branch
         uses: actions/checkout@v2
         with:
-          ref: main
+          ref: stage
 
       - name: Use specific node version
         uses: actions/setup-node@v3
