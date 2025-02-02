@@ -27,7 +27,11 @@ import {
   RadioChangeEvent,
   Row,
 } from 'antd';
-import { QuestionCircleOutlined, SwapOutlined } from '@ant-design/icons';
+import {
+  QuestionCircleOutlined,
+  SwapOutlined,
+  WarningOutlined,
+} from '@ant-design/icons';
 
 import { useConnectModal, useTokenBalance, useQuoter } from '@/hooks';
 import { DEFAULT_CHAIN_VIEM, getConfig } from '@/config';
@@ -76,7 +80,7 @@ const SwapCard: FC = () => {
     [account.chainId],
   );
 
-  const { swapRouter, quoter, poolManagerViewer, pools } = theConfig;
+  const { swapRouter, quoter, stateView, pools } = theConfig;
 
   const { quoteExactInputSingle, quoteExactOuputSingle } = useQuoter({
     publicClient,
@@ -97,7 +101,6 @@ const SwapCard: FC = () => {
   const [inValue, setInValue] = useState('');
   const [outValue, setOutValue] = useState('');
 
-  const [priceImpact, setPriceImpact] = useState(0);
   const [swapType, setSwapType] = useState<SwapTypeEnum>(SwapTypeEnum.EIFO);
 
   const [inToken, setInToken] = useState<TokenConfig>(token0);
@@ -105,6 +108,8 @@ const SwapCard: FC = () => {
 
   const [timer, setTimer] = useState(0);
   const [isSwapModalOpen, setIsSwapModalOpen] = useState(false);
+
+  const [quoterError, setQuoterError] = useState(false);
 
   const openSwapModal = () => {
     setIsSwapModalOpen(true);
@@ -157,10 +162,7 @@ const SwapCard: FC = () => {
       if (sourceInfo.source === 'event') {
         setSwapType(SwapTypeEnum.EIFO);
         if (values.formattedValue !== '') {
-          const newInValue = Number(
-            Number(values.formattedValue).toFixed(inToken.decimals),
-          ).toString();
-          setInValue(newInValue);
+          setInValue(values.formattedValue);
         } else {
           setInValue('');
         }
@@ -176,10 +178,7 @@ const SwapCard: FC = () => {
       if (sourceInfo.source === 'event') {
         setSwapType(SwapTypeEnum.EOFI);
         if (values.formattedValue !== '') {
-          const newOutValue = Number(
-            Number(values.formattedValue).toFixed(outToken.decimals),
-          ).toString();
-          setOutValue(newOutValue);
+          setOutValue(values.formattedValue);
         } else {
           setOutValue('');
         }
@@ -221,30 +220,29 @@ const SwapCard: FC = () => {
         if (inValue === '') {
           setOutValue('');
         } else if (!!slot0) {
-          setIsOutRecalculating(true);
+          try {
+            setIsOutRecalculating(true);
 
-          const quotePayload = {
-            pool,
-            slot0,
-            token: inToken,
-            value: inValue,
-            hookData: `0x`,
-            slippage,
-          };
+            const quotePayload = {
+              pool,
+              slot0,
+              token: inToken,
+              value: inValue,
+              hookData: `0x`,
+              slippage,
+            };
 
-          const result = await quoteExactInputSingle(quotePayload);
+            const result = await quoteExactInputSingle(quotePayload);
 
-          setIsOutRecalculating(false);
-
-          const priceAfter = getPriceBySqrtX96(result.sqrtPriceX96After);
-          const priceCurrent = getPriceBySlot0(slot0);
-
-          const newPriceImpact =
-            ((priceAfter - priceCurrent) / priceCurrent) * 100;
-
-          setPriceImpact(newPriceImpact);
-
-          setOutValue(formatUnits(result.outValue, outToken.decimals));
+            setQuoterError(false);
+            setOutValue(formatUnits(result.outValue, outToken.decimals));
+          } catch (error: unknown) {
+            console.log('Quoter failure', error);
+            setOutValue('');
+            setQuoterError(true);
+          } finally {
+            setIsOutRecalculating(false);
+          }
         }
       }
     };
@@ -257,30 +255,29 @@ const SwapCard: FC = () => {
         if (outValue === '') {
           setInValue('');
         } else if (!!slot0) {
-          setIsInRecalculating(true);
+          try {
+            setIsInRecalculating(true);
 
-          const quotePayload = {
-            pool,
-            slot0,
-            token: outToken,
-            value: outValue,
-            hookData: `0x`,
-            slippage,
-          };
+            const quotePayload = {
+              pool,
+              slot0,
+              token: outToken,
+              value: outValue,
+              hookData: `0x`,
+              slippage,
+            };
 
-          const result = await quoteExactOuputSingle(quotePayload);
+            const result = await quoteExactOuputSingle(quotePayload);
 
-          setIsInRecalculating(false);
-
-          const priceAfter = getPriceBySqrtX96(result.sqrtPriceX96After);
-          const priceCurrent = getPriceBySlot0(slot0);
-
-          const newPriceImpact =
-            ((priceAfter - priceCurrent) / priceCurrent) * 100;
-
-          setPriceImpact(newPriceImpact);
-
-          setInValue(formatUnits(result.inValue, inToken.decimals));
+            setQuoterError(false);
+            setInValue(formatUnits(result.inValue, inToken.decimals));
+          } catch (error: unknown) {
+            console.log('Quoter failure', error);
+            setInValue('');
+            setQuoterError(true);
+          } finally {
+            setIsInRecalculating(false);
+          }
         }
       }
     };
@@ -303,8 +300,8 @@ const SwapCard: FC = () => {
         setIsPoolStateUpdating(true);
 
         const slot0Array = await publicClient.readContract({
-          address: poolManagerViewer.address,
-          abi: poolManagerViewer.abi,
+          address: stateView.address,
+          abi: stateView.abi,
           functionName: 'getSlot0',
           args: [poolId],
         });
@@ -320,8 +317,8 @@ const SwapCard: FC = () => {
         };
 
         const liquidityResult = await publicClient.readContract({
-          address: poolManagerViewer.address,
-          abi: poolManagerViewer.abi,
+          address: stateView.address,
+          abi: stateView.abi,
           functionName: 'getLiquidity',
           args: [pool.id],
         });
@@ -340,7 +337,7 @@ const SwapCard: FC = () => {
     };
 
     updatePoolState(pool.id);
-  }, [timer, pool, poolManagerViewer]);
+  }, [timer, pool, stateView]);
 
   const renderSymbol = (token: TokenConfig) => {
     return token.symbol;
@@ -388,13 +385,13 @@ const SwapCard: FC = () => {
       return null;
     }
 
-    const price = getPriceBySlot0(slot0);
+    const price = getPriceBySlot0(slot0, token0.decimals, token1.decimals);
 
     if (token0.address === inToken.address) {
-      return `1 ${token0.symbol} = ${formatPrice(price)} ${token1.symbol}`;
+      return `1 ${token0.symbol} = ${formatPrice(price, token1.decimals)} ${token1.symbol}`;
     }
 
-    return `1 ${token1.symbol} = ${formatPrice(1 / price)} ${token0.symbol}`;
+    return `1 ${token1.symbol} = ${formatPrice(1 / price, token0.decimals)} ${token0.symbol}`;
   };
 
   const renderFeeText = (fee: number) => {
@@ -430,9 +427,15 @@ const SwapCard: FC = () => {
     : false;
 
   const isLoading = isPoolStateUpdating;
+  const isQuoting = isInRecalculating || isOutRecalculating;
 
   const isSwapDisabled =
-    isInInputEmpty || !isBalanceSufficient || isLoading || isSwapModalOpen;
+    isInInputEmpty ||
+    !isBalanceSufficient ||
+    isLoading ||
+    isQuoting ||
+    quoterError ||
+    isSwapModalOpen;
 
   const canSetMaxValue =
     !!inBalanceInfo?.data && Number(inBalanceInfo.data?.formatted) > 0;
@@ -484,6 +487,7 @@ const SwapCard: FC = () => {
                 valueIsNumericString
                 allowLeadingZeros={false}
                 allowNegative={false}
+                decimalScale={inToken.decimals}
                 readOnly={isWalletConnected && !isChainSupported}
                 required
               />
@@ -540,6 +544,7 @@ const SwapCard: FC = () => {
                 valueIsNumericString
                 allowLeadingZeros={false}
                 allowNegative={false}
+                decimalScale={outToken.decimals}
                 readOnly={isWalletConnected && !isChainSupported}
                 required
               />
@@ -592,18 +597,33 @@ const SwapCard: FC = () => {
                   disabled={isSwapDisabled}
                   block
                 >
-                  {isInInputEmpty
-                    ? 'Enter an amount'
-                    : isBalanceSufficient
-                      ? 'Swap'
-                      : `Insufficient ${inToken.symbol} balance`}
+                  {isQuoting
+                    ? 'Finalizing quote...'
+                    : quoterError
+                      ? 'Review'
+                      : isInInputEmpty
+                        ? 'Enter an amount'
+                        : isBalanceSufficient
+                          ? 'Swap'
+                          : `Insufficient ${inToken.symbol} balance`}
                 </Button>
               )}
             </>
           )}
         </div>
 
-        {!isInInputEmpty && !!slot0 && (
+        {quoterError && (
+          <div className={styles.quoterError}>
+            <div style={{ marginRight: 10 }}>
+              <WarningOutlined style={{ fontSize: 16, color: 'orange' }} />
+            </div>
+            <div style={{ color: 'gray' }}>
+              Insufficient liquidity for the trade
+            </div>
+          </div>
+        )}
+
+        {!isInInputEmpty && !quoterError && !!slot0 && (
           <Collapse
             className={styles.details}
             items={[
@@ -659,7 +679,6 @@ const SwapCard: FC = () => {
           token1={token1}
           pool={pool}
           router={swapRouter}
-          poolManagerViewer={poolManagerViewer}
           swapType={swapType}
           slot0={slot0!}
           slippage={slippage}

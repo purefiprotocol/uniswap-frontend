@@ -23,6 +23,7 @@ export enum PercentageEnum {
   ONE = 1,
   FIVE = 5,
   TEN = 10,
+  CUSTOM = 'custom',
   FULL = Infinity,
 }
 
@@ -56,6 +57,7 @@ export interface PoolConfig {
   swapRuleId: string;
   liquidityRuleId: string;
   tickSpacing: number;
+  swapFee: FeeTierEnum;
 }
 
 export interface ContractConfig {
@@ -64,13 +66,12 @@ export interface ContractConfig {
 }
 
 export interface Config {
+  poolManager: ContractConfig;
+  stateView: ContractConfig;
+  quoter: ContractConfig;
   swapRouter: ContractConfig;
   liquidityRouter: ContractConfig;
   liquidityHelper: ContractConfig;
-  liquidityHelper2: ContractConfig;
-  poolManager: ContractConfig;
-  poolManagerViewer: ContractConfig;
-  quoter: ContractConfig;
   pools: PoolConfig[];
   faucet?: {
     symbol: string;

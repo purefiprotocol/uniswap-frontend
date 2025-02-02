@@ -83,13 +83,8 @@ const SwapCard: FC = () => {
     [account.chainId],
   );
 
-  const {
-    liquidityRouter,
-    poolManagerViewer,
-    liquidityHelper,
-    liquidityHelper2,
-    pools,
-  } = theConfig;
+  const { liquidityRouter, poolManager, stateView, liquidityHelper, pools } =
+    theConfig;
 
   const { calculateAmountsByAmountToken0, calculateAmountsByAmountToken1 } =
     useLiquidityHelper({
@@ -136,22 +131,21 @@ const SwapCard: FC = () => {
     Number(localStorage.getItem('slippage')) || DEFAULT_SLIPPAGE,
   );
 
-  const [activeTierId, setActiveTierId] = useState(
-    FeeTierEnum.VERY_STABLE_PAIRS,
-  );
+  const [activeTierId, setActiveTierId] = useState(pool.swapFee);
 
-  const [activePercentage, setActivePercentage] =
-    useState<PercentageEnum | null>(PercentageEnum.ONE);
+  const [activePercentage, setActivePercentage] = useState<PercentageEnum>(
+    PercentageEnum.ONE,
+  );
 
   const currentPrice = useMemo(() => {
     if (slot0) {
-      const price = getPriceBySlot0(slot0);
+      const price = getPriceBySlot0(slot0, token0.decimals, token1.decimals);
 
       if (leftToken.address.toLowerCase() === token0.address.toLowerCase()) {
-        return formatPrice(price);
+        return formatPrice(price, token1.decimals);
       }
 
-      return formatPrice(1 / price);
+      return formatPrice(1 / price, token0.decimals);
     }
 
     return formatPrice(0);
@@ -198,12 +192,14 @@ const SwapCard: FC = () => {
 
   useEffect(() => {
     if (slot0) {
-      // TODO handle full range
       if (activePercentage === PercentageEnum.FULL) {
-        setMinPrice('0');
-        setMaxPrice('∞');
-      } else if (activePercentage !== null) {
-        let price = getPriceBySlot0(slot0);
+        const minTick = nearestUsableTick(TickMath.MIN_TICK, pool.tickSpacing);
+        const maxTick = nearestUsableTick(TickMath.MAX_TICK, pool.tickSpacing);
+
+        setTickLower(minTick);
+        setTickUpper(maxTick);
+      } else if (activePercentage !== PercentageEnum.CUSTOM) {
+        let price = getPriceBySlot0(slot0, token0.decimals, token1.decimals);
 
         if (leftToken.address.toLowerCase() !== token0.address.toLowerCase()) {
           price = 1 / price;
@@ -226,7 +222,7 @@ const SwapCard: FC = () => {
       if (lastChanged === 'leftToken') {
         if (leftTokenAmount === '') {
           setRightTokenAmount('');
-        } else if (slot0) {
+        } else if (!!slot0) {
           setIsRightTokenRecalculating(true);
 
           if (tickLower !== tickUpper) {
@@ -272,7 +268,7 @@ const SwapCard: FC = () => {
       }
     };
     helper();
-  }, [leftTokenAmount, minPrice, maxPrice, slot0]);
+  }, [leftTokenAmount, minPrice, maxPrice, tickLower, tickUpper, slot0]);
 
   useEffect(() => {
     const helper = async () => {
@@ -325,7 +321,7 @@ const SwapCard: FC = () => {
       }
     };
     helper();
-  }, [rightTokenAmount, minPrice, maxPrice, slot0]);
+  }, [rightTokenAmount, minPrice, maxPrice, tickLower, tickUpper, slot0]);
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -343,8 +339,8 @@ const SwapCard: FC = () => {
         setIsPoolStateUpdating(true);
 
         const slot0Array = await publicClient.readContract({
-          address: poolManagerViewer.address,
-          abi: poolManagerViewer.abi,
+          address: stateView.address,
+          abi: stateView.abi,
           functionName: 'getSlot0',
           args: [poolId],
         });
@@ -360,8 +356,8 @@ const SwapCard: FC = () => {
         };
 
         const liquidityResult = await publicClient.readContract({
-          address: poolManagerViewer.address,
-          abi: poolManagerViewer.abi,
+          address: stateView.address,
+          abi: stateView.abi,
           functionName: 'getLiquidity',
           args: [pool.id],
         });
@@ -380,28 +376,28 @@ const SwapCard: FC = () => {
     };
 
     updatePoolState(pool.id);
-  }, [timer, pool, poolManagerViewer]);
+  }, [timer, pool, stateView]);
 
   const changeDirectionHandler = () => {
-    if (!isReadOnlyMode) {
-      setDirection((prev) => {
-        return prev === DirectionEnum.LEFT
-          ? DirectionEnum.RIGHT
-          : DirectionEnum.LEFT;
-      });
-
-      setLeftToken(rightToken);
-      setRightToken(leftToken);
-
-      const prevLeftTokenAmount = leftTokenAmount;
-
-      setLeftTokenAmount(rightTokenAmount);
-      setRightTokenAmount(prevLeftTokenAmount);
-
-      setLastChanged((prev) =>
-        prev === 'leftToken' ? 'rightToken' : 'leftToken',
-      );
-    }
+    // if (!isReadOnlyMode) {
+    //   setDirection((prev) => {
+    //     return prev === DirectionEnum.LEFT
+    //       ? DirectionEnum.RIGHT
+    //       : DirectionEnum.LEFT;
+    //   });
+    //   setLastChanged((prev) =>
+    //     prev === 'leftToken' ? 'rightToken' : 'leftToken',
+    //   );
+    //   const prevLeftToken: TokenConfig = JSON.parse(JSON.stringify(leftToken));
+    //   const prevRightToken: TokenConfig = JSON.parse(
+    //     JSON.stringify(rightToken),
+    //   );
+    //   setLeftToken(prevRightToken);
+    //   setRightToken(prevLeftToken);
+    //   setActivePercentage(PercentageEnum.ONE);
+    //   setLeftTokenAmount('0');
+    //   setRightTokenAmount('0');
+    // }
   };
 
   const allowedHandler = (values: NumberFormatValues) => {
@@ -487,22 +483,26 @@ const SwapCard: FC = () => {
   const minPriceChangeHandlerDebounced = useDebouncedCallback(
     (values: NumberFormatValues, sourceInfo: SourceInfo) => {
       if (sourceInfo.source === 'event') {
-        setActivePercentage(null);
+        setActivePercentage(PercentageEnum.CUSTOM);
       }
 
       if (values.formattedValue !== '') {
-        const [newMinPriceValue, minTick] = correctPriceByPrice(
+        const [newMinPriceValue, newTick] = correctPriceByPrice(
           values.formattedValue,
           pool.tickSpacing,
+          token0.decimals,
+          token1.decimals,
         );
 
-        setTickLower(minTick);
+        setTickLower(newTick);
 
-        const newMinPriceValueFormatted = Number(
-          newMinPriceValue.toFixed(DEFAULT_PRICE_DECIMALS),
-        ).toString();
+        // TODO recheck
 
-        setMinPrice(newMinPriceValueFormatted);
+        if (!!slot0 && newTick > slot0.tick) {
+          setRightTokenAmount('0');
+        }
+
+        setMinPrice(newMinPriceValue.toString());
       } else {
         setMinPrice('');
       }
@@ -513,21 +513,25 @@ const SwapCard: FC = () => {
   const maxPriceChangeHandlerDebounced = useDebouncedCallback(
     (values: NumberFormatValues, sourceInfo: SourceInfo) => {
       if (sourceInfo.source === 'event') {
-        setActivePercentage(null);
+        setActivePercentage(PercentageEnum.CUSTOM);
       }
       if (values.formattedValue !== '') {
-        const [newMaxPriceValue, minTick] = correctPriceByPrice(
+        const [newMaxPriceValue, newTick] = correctPriceByPrice(
           values.formattedValue,
           pool.tickSpacing,
+          token0.decimals,
+          token1.decimals,
         );
 
-        setTickUpper(minTick);
+        setTickUpper(newTick);
 
-        const newMaxPriceValueFormatted = Number(
-          newMaxPriceValue.toFixed(DEFAULT_PRICE_DECIMALS),
-        ).toString();
+        // TODO recheck
 
-        setMaxPrice(newMaxPriceValueFormatted);
+        if (!!slot0 && newTick < slot0.tick) {
+          setLeftTokenAmount('0');
+        }
+
+        setMaxPrice(newMaxPriceValue.toString());
       } else {
         setMaxPrice('');
       }
@@ -554,9 +558,20 @@ const SwapCard: FC = () => {
     isTokenLeftBalanceSufficient && isTokenRightBalanceSufficient;
 
   const isLoading = isPoolStateUpdating;
+  const isRecalculating = isLeftTokenRecalculating || isRightTokenRecalculating;
+
+  const isBusy =
+    isLoading ||
+    isRecalculating ||
+    leftTokenAmountChangeHandlerDebounced.isPending() ||
+    rightTokenAmountChangeHandlerDebounced.isPending();
 
   const isAddLiquidityDisabled =
-    isInputEmpty || !isBalanceSufficient || isLoading || isLiquidityModalOpen;
+    isInputEmpty ||
+    !isBalanceSufficient ||
+    isLoading ||
+    isRecalculating ||
+    isLiquidityModalOpen;
 
   const feeTierChangeHandler = (tierId: FeeTierEnum) => {
     if (!isReadOnlyMode) {
@@ -565,83 +580,100 @@ const SwapCard: FC = () => {
   };
 
   const percentageChangeHandler = (percentage: PercentageEnum) => {
-    if (!isReadOnlyMode) {
+    if (!isReadOnlyMode && !isBusy) {
       setActivePercentage(percentage);
     }
   };
 
   const minPriceIncreaseHandler = () => {
-    if (!isReadOnlyMode) {
-      setActivePercentage(null);
-      const [priceByTick, minTick] = correctPriceByTick(
-        tickLower + pool.tickSpacing,
-        pool.tickSpacing,
-      );
+    if (!isReadOnlyMode && activePercentage !== PercentageEnum.FULL) {
+      if (tickLower + pool.tickSpacing < tickUpper) {
+        setActivePercentage(PercentageEnum.CUSTOM);
 
-      const newMinPriceValueFormatted = Number(
-        priceByTick.toFixed(DEFAULT_PRICE_DECIMALS),
-      ).toString();
+        const [priceByTick, minTick] = correctPriceByTick(
+          tickLower + pool.tickSpacing,
+          pool.tickSpacing,
+          token0.decimals,
+          token1.decimals,
+        );
 
-      setTickLower(minTick);
+        const newMinPriceValueFormatted = Number(
+          priceByTick.toFixed(DEFAULT_PRICE_DECIMALS),
+        ).toString();
 
-      setMinPrice(newMinPriceValueFormatted);
+        setTickLower(minTick);
+
+        setMinPrice(newMinPriceValueFormatted);
+      }
     }
   };
 
   const minPriceDecreaseHandler = () => {
-    if (!isReadOnlyMode) {
-      setActivePercentage(null);
+    if (!isReadOnlyMode && activePercentage !== PercentageEnum.FULL) {
+      if (tickLower - pool.tickSpacing < tickUpper) {
+        setActivePercentage(PercentageEnum.CUSTOM);
 
-      const [priceByTick, minTick] = correctPriceByTick(
-        tickLower - pool.tickSpacing,
-        pool.tickSpacing,
-      );
+        const [priceByTick, minTick] = correctPriceByTick(
+          tickLower - pool.tickSpacing,
+          pool.tickSpacing,
+          token0.decimals,
+          token1.decimals,
+        );
 
-      const newMinPriceValueFormatted = Number(
-        priceByTick.toFixed(DEFAULT_PRICE_DECIMALS),
-      ).toString();
+        const newMinPriceValueFormatted = Number(
+          priceByTick.toFixed(DEFAULT_PRICE_DECIMALS),
+        ).toString();
 
-      setTickLower(minTick);
+        setTickLower(minTick);
 
-      setMinPrice(newMinPriceValueFormatted);
+        setMinPrice(newMinPriceValueFormatted);
+      }
     }
   };
 
   const maxPriceIncreaseHandler = () => {
-    if (!isReadOnlyMode) {
-      setActivePercentage(null);
+    if (!isReadOnlyMode && activePercentage !== PercentageEnum.FULL) {
+      if (tickUpper + pool.tickSpacing > tickLower) {
+        setActivePercentage(PercentageEnum.CUSTOM);
 
-      const [priceByTick, minTick] = correctPriceByTick(
-        tickUpper + pool.tickSpacing,
-        pool.tickSpacing,
-      );
+        const [priceByTick, minTick] = correctPriceByTick(
+          tickUpper + pool.tickSpacing,
+          pool.tickSpacing,
+          token0.decimals,
+          token1.decimals,
+        );
 
-      const newMaxPriceValueFormatted = Number(
-        priceByTick.toFixed(DEFAULT_PRICE_DECIMALS),
-      ).toString();
+        const newMaxPriceValueFormatted = Number(
+          priceByTick.toFixed(DEFAULT_PRICE_DECIMALS),
+        ).toString();
 
-      setTickUpper(minTick);
+        setTickUpper(minTick);
 
-      setMaxPrice(newMaxPriceValueFormatted);
+        setMaxPrice(newMaxPriceValueFormatted);
+      }
     }
   };
 
   const maxPriceDecreaseHandler = () => {
-    if (!isReadOnlyMode) {
-      setActivePercentage(null);
+    if (!isReadOnlyMode && activePercentage !== PercentageEnum.FULL) {
+      if (tickUpper - pool.tickSpacing > tickLower) {
+        setActivePercentage(PercentageEnum.CUSTOM);
 
-      const [priceByTick, minTick] = correctPriceByTick(
-        tickUpper - pool.tickSpacing,
-        pool.tickSpacing,
-      );
+        const [priceByTick, minTick] = correctPriceByTick(
+          tickUpper - pool.tickSpacing,
+          pool.tickSpacing,
+          token0.decimals,
+          token1.decimals,
+        );
 
-      const newMaxPriceValueFormatted = Number(
-        priceByTick.toFixed(DEFAULT_PRICE_DECIMALS),
-      ).toString();
+        const newMaxPriceValueFormatted = Number(
+          priceByTick.toFixed(DEFAULT_PRICE_DECIMALS),
+        ).toString();
 
-      setTickUpper(minTick);
+        setTickUpper(minTick);
 
-      setMaxPrice(newMaxPriceValueFormatted);
+        setMaxPrice(newMaxPriceValueFormatted);
+      }
     }
   };
 
@@ -793,6 +825,7 @@ const SwapCard: FC = () => {
                 this,
                 FeeTierEnum.VERY_STABLE_PAIRS,
               )}
+              disabled
             >
               <Flex gap="small" align="space-between" vertical>
                 <Flex gap="middle" justify="space-between" align="center">
@@ -912,6 +945,7 @@ const SwapCard: FC = () => {
                     this,
                     PercentageEnum.ONE,
                   )}
+                  disabled={isBusy}
                 >
                   <Flex gap="small" align="center" justify="center">
                     <div>&#177;{PercentageEnum.ONE}%</div>
@@ -925,6 +959,7 @@ const SwapCard: FC = () => {
                     this,
                     PercentageEnum.FIVE,
                   )}
+                  disabled={isBusy}
                 >
                   <Flex gap="small" align="center" justify="center">
                     <div>&#177;{PercentageEnum.FIVE}%</div>
@@ -938,6 +973,7 @@ const SwapCard: FC = () => {
                     this,
                     PercentageEnum.TEN,
                   )}
+                  disabled={isBusy}
                 >
                   <Flex gap="small" align="center" justify="center">
                     <div>&#177;{PercentageEnum.TEN}%</div>
@@ -951,10 +987,24 @@ const SwapCard: FC = () => {
                     this,
                     PercentageEnum.FULL,
                   )}
+                  disabled={isBusy}
+                >
+                  <Flex gap="small" align="center" justify="center">
+                    <div>Full</div>
+                  </Flex>
+                </button>
+
+                <button
+                  type="button"
+                  className={percentageClassName(PercentageEnum.CUSTOM)}
+                  onClick={percentageChangeHandler.bind(
+                    this,
+                    PercentageEnum.CUSTOM,
+                  )}
                   disabled
                 >
                   <Flex gap="small" align="center" justify="center">
-                    <div>Full Range</div>
+                    <div>Custom</div>
                   </Flex>
                 </button>
               </Flex>
@@ -975,6 +1025,16 @@ const SwapCard: FC = () => {
                     value={minPrice}
                     onValueChange={minPriceChangeHandlerDebounced}
                     placeholder="0"
+                    displayType={
+                      activePercentage === PercentageEnum.FULL
+                        ? 'text'
+                        : 'input'
+                    }
+                    renderText={(value) => (
+                      <span className={maxPriceInputClassName}>
+                        {activePercentage === PercentageEnum.FULL ? '0' : value}
+                      </span>
+                    )}
                     isAllowed={allowedHandler}
                     allowedDecimalSeparators={['.', ',']}
                     valueIsNumericString
@@ -993,6 +1053,7 @@ const SwapCard: FC = () => {
                     className={styles.increaseButton}
                     type="button"
                     onClick={minPriceIncreaseHandler}
+                    disabled={activePercentage === PercentageEnum.FULL}
                   >
                     <PlusOutlined />
                   </button>
@@ -1001,6 +1062,7 @@ const SwapCard: FC = () => {
                     className={styles.increaseButton}
                     type="button"
                     onClick={minPriceDecreaseHandler}
+                    disabled={activePercentage === PercentageEnum.FULL}
                   >
                     <MinusOutlined />
                   </button>
@@ -1021,6 +1083,16 @@ const SwapCard: FC = () => {
                     value={maxPrice}
                     onValueChange={maxPriceChangeHandlerDebounced}
                     placeholder="0"
+                    displayType={
+                      activePercentage === PercentageEnum.FULL
+                        ? 'text'
+                        : 'input'
+                    }
+                    renderText={(value) => (
+                      <span className={maxPriceInputClassName}>
+                        {activePercentage === PercentageEnum.FULL ? '∞' : value}
+                      </span>
+                    )}
                     isAllowed={allowedHandler}
                     allowedDecimalSeparators={['.', ',']}
                     valueIsNumericString
@@ -1039,6 +1111,7 @@ const SwapCard: FC = () => {
                     className={styles.increaseButton}
                     type="button"
                     onClick={maxPriceIncreaseHandler}
+                    disabled={activePercentage === PercentageEnum.FULL}
                   >
                     <PlusOutlined />
                   </button>
@@ -1047,6 +1120,7 @@ const SwapCard: FC = () => {
                     className={styles.increaseButton}
                     type="button"
                     onClick={maxPriceDecreaseHandler}
+                    disabled={activePercentage === PercentageEnum.FULL}
                   >
                     <MinusOutlined />
                   </button>
@@ -1074,6 +1148,7 @@ const SwapCard: FC = () => {
                     valueIsNumericString
                     allowLeadingZeros={false}
                     allowNegative={false}
+                    decimalScale={leftToken.decimals}
                     readOnly={isReadOnlyMode}
                     required
                   />
@@ -1122,6 +1197,7 @@ const SwapCard: FC = () => {
                     valueIsNumericString
                     allowLeadingZeros={false}
                     allowNegative={false}
+                    decimalScale={rightToken.decimals}
                     readOnly={isReadOnlyMode}
                     required
                   />
@@ -1218,8 +1294,9 @@ const SwapCard: FC = () => {
           token0={token0}
           token1={token1}
           pool={pool}
+          poolManager={poolManager}
           router={liquidityRouter}
-          routerHelper={liquidityHelper2}
+          routerHelper={liquidityHelper}
           slot0={slot0!}
           slippage={slippage}
           onCancel={closeLiquidityModal}

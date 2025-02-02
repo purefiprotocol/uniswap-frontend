@@ -21,6 +21,7 @@ import {
   http,
   maxUint256,
   parseUnits,
+  zeroAddress,
 } from 'viem';
 import { toast } from 'react-toastify';
 import {
@@ -42,6 +43,7 @@ import {
   SolutionOutlined,
   WarningOutlined,
   CloseCircleOutlined,
+  ExportOutlined,
 } from '@ant-design/icons';
 import classNames from 'classnames';
 
@@ -62,7 +64,7 @@ import {
 import { DEFAULT_CHAIN_VIEM } from '@/config';
 
 import { AutoHeight } from '../AutoHeight';
-import { DashboardLink, TxnLink } from '../TxnLink';
+import { TxnLink } from '../TxnLink';
 
 import styles from './SwapModal.module.scss';
 
@@ -77,7 +79,6 @@ interface SwapModalProps {
   token1: TokenConfig;
   pool: PoolConfig;
   router: ContractConfig;
-  poolManagerViewer: ContractConfig;
   swapType: SwapTypeEnum;
   slot0: Slot0;
   slippage: number;
@@ -131,7 +132,6 @@ const SwapModal: FC<SwapModalProps> = (props) => {
     token1,
     pool,
     router,
-    poolManagerViewer,
     swapType,
     slot0,
     slippage,
@@ -169,6 +169,7 @@ const SwapModal: FC<SwapModalProps> = (props) => {
   const [step3Loading, setStep3Loading] = useState(false);
   const [step4Loading, setStep4Loading] = useState(false);
   const [swapCompleted, setSwapCompleted] = useState(false);
+  const [swapTxnLink, setSwapTxnLink] = useState<string | null>(null);
 
   const [frozenInValue, setFrozenInValue] = useState('');
   const [frozenOutValue, setFrozenOutValue] = useState('');
@@ -224,8 +225,8 @@ const SwapModal: FC<SwapModalProps> = (props) => {
     setSwapError(null);
     setPurefiError(null);
     setIsKycAllowed(false);
-
     setSwapCompleted(false);
+    setSwapTxnLink(null);
 
     setApproveLoadingMessage('Confirm approve transaction');
     setSwapLoadingMessage('Confirm swap transaction');
@@ -236,6 +237,10 @@ const SwapModal: FC<SwapModalProps> = (props) => {
       chain: account.chain!,
       transport: custom((window as any).ethereum!),
     });
+
+    if (inToken.address === zeroAddress) {
+      return 0n;
+    }
 
     const [address] = await walletClient.getAddresses();
 
@@ -267,7 +272,12 @@ const SwapModal: FC<SwapModalProps> = (props) => {
 
         setCurrentAllowance(theAllowance);
 
-        if (theAllowance >= parseUnits(inValue, inToken.decimals)) {
+        const isAllowanceOk =
+          inToken.address === zeroAddress
+            ? true
+            : theAllowance >= parseUnits(inValue, inToken.decimals);
+
+        if (isAllowanceOk) {
           setStep(1);
           setStepItems((prev) => {
             const step1 = prev[0];
@@ -346,7 +356,12 @@ const SwapModal: FC<SwapModalProps> = (props) => {
         const theAllowance = await getAllowance();
         setCurrentAllowance(theAllowance);
 
-        if (theAllowance >= parseUnits(inValue, inToken.decimals)) {
+        const isAllowanceOk =
+          inToken.address === zeroAddress
+            ? true
+            : theAllowance >= parseUnits(inValue, inToken.decimals);
+
+        if (isAllowanceOk) {
           setStep(1);
           setStepItems((prev) => {
             const step1 = prev[0];
@@ -590,6 +605,7 @@ const SwapModal: FC<SwapModalProps> = (props) => {
           : parsedOutValue;
 
       // zeroForOne, amountSpecified, sqrtPriceLimitX96
+      // const swapParams = [zeroForOne, 0n, sqrtPriceLimitX96];
       const swapParams = [zeroForOne, amountSpecified, sqrtPriceLimitX96];
 
       // takeClaims, settleUsingBurn
@@ -597,12 +613,18 @@ const SwapModal: FC<SwapModalProps> = (props) => {
 
       const args = [poolKey, swapParams, testSettings, purefiData];
 
+      console.log(args);
+
       const simulationPromise = publicClient.simulateContract({
         account: address,
         address: router.address,
         abi: router.abi,
         functionName: 'swap',
         args,
+        value:
+          inToken.address === zeroAddress
+            ? parseUnits(frozenInValue, inToken.decimals)
+            : undefined,
       });
 
       const sleepPromise = sleep(1000);
@@ -727,7 +749,15 @@ const SwapModal: FC<SwapModalProps> = (props) => {
         abi: router.abi,
         functionName: 'swap',
         args,
+        value:
+          inToken.address === zeroAddress
+            ? parseUnits(frozenInValue, inToken.decimals)
+            : undefined,
       });
+
+      const link = getTransactionLink(swapHash, account.chain);
+
+      setSwapTxnLink(link);
 
       setSwapLoadingMessage('Swap transaction in progress');
 
@@ -737,15 +767,7 @@ const SwapModal: FC<SwapModalProps> = (props) => {
 
       const isSuccess = swapReceipt.status === 'success';
 
-      const link = getTransactionLink(
-        swapReceipt.transactionHash,
-        account.chain,
-      );
-
-      const toastContent = <TxnLink href={link} title="Swap" />;
-
       if (isSuccess) {
-        toast.success(toastContent);
         setStepItems((prev) => {
           const step1 = prev[0];
           const step2 = prev[1];
@@ -759,6 +781,8 @@ const SwapModal: FC<SwapModalProps> = (props) => {
 
         setSwapCompleted(true);
       } else {
+        const toastContent = <TxnLink href={link} title="Swap" />;
+
         toast.error(toastContent);
         setStepItems((prev) => {
           const step1 = prev[0];
@@ -835,7 +859,9 @@ const SwapModal: FC<SwapModalProps> = (props) => {
     [styles.allowance]: true,
     [styles.allowance__ok]:
       currentAllowance !== null &&
-      currentAllowance >= parseUnits(inValue, inToken.decimals),
+      (inToken.address === zeroAddress
+        ? true
+        : currentAllowance >= parseUnits(inValue, inToken.decimals)),
   });
 
   return (
@@ -1144,11 +1170,36 @@ const SwapModal: FC<SwapModalProps> = (props) => {
                 )}
 
                 {!step4Loading && swapError && (
-                  <Flex gap="small" vertical style={{ padding: 30 }}>
-                    <div style={{ fontSize: 20, color: '#ff4d4f' }}>
-                      Swap failed
+                  <Flex gap="small" vertical style={{ padding: '0 30px' }}>
+                    <div className={styles.loader__container}>
+                      <div className={styles.loader__message}>
+                        <div style={{ marginBottom: 5 }}>Swap failed</div>
+                        {!!swapTxnLink && (
+                          <a
+                            href={swapTxnLink}
+                            target="_blank"
+                            rel="noreferrer noopener"
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: 16,
+                            }}
+                          >
+                            <div>Explorer</div>
+                            <div style={{ marginLeft: 5 }}>
+                              <ExportOutlined style={{ fontSize: 14 }} />
+                            </div>
+                          </a>
+                        )}
+                      </div>
+                      <div className={styles.loader__success}>
+                        <CloseCircleOutlined
+                          style={{ fontSize: 54, color: '#ff4d4f' }}
+                        />
+                      </div>
+                      <div>{swapError}</div>
                     </div>
-                    <div>{swapError}</div>
                   </Flex>
                 )}
 
@@ -1156,7 +1207,25 @@ const SwapModal: FC<SwapModalProps> = (props) => {
                   <Flex gap="small" vertical style={{ padding: '0 30px' }}>
                     <div className={styles.loader__container}>
                       <div className={styles.loader__message}>
-                        Swap completed!
+                        <div style={{ marginBottom: 5 }}>Swap completed!</div>
+                        {!!swapTxnLink && (
+                          <a
+                            href={swapTxnLink}
+                            target="_blank"
+                            rel="noreferrer noopener"
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: 16,
+                            }}
+                          >
+                            <div>Explorer</div>
+                            <div style={{ marginLeft: 5 }}>
+                              <ExportOutlined style={{ fontSize: 14 }} />
+                            </div>
+                          </a>
+                        )}
                       </div>
                       <div className={styles.loader__success}>
                         <CheckCircleOutlined />
@@ -1186,7 +1255,15 @@ const SwapModal: FC<SwapModalProps> = (props) => {
             </div>
 
             <div className={styles.step__footer}>
-              {!swapCompleted && (
+              {swapError || swapCompleted ? (
+                <Button
+                  className={styles.theButton}
+                  onClick={finishHandler}
+                  block
+                >
+                  Done
+                </Button>
+              ) : (
                 <Button
                   className={styles.theButton}
                   onClick={swapHandler}
@@ -1194,16 +1271,6 @@ const SwapModal: FC<SwapModalProps> = (props) => {
                   block
                 >
                   Swap
-                </Button>
-              )}
-
-              {swapCompleted && (
-                <Button
-                  className={styles.theButton}
-                  onClick={finishHandler}
-                  block
-                >
-                  Done
                 </Button>
               )}
             </div>
