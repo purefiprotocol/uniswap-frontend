@@ -18,4 +18,6 @@ const wagmiAdapter = new WagmiAdapter({
   projectId: PROJECT_ID,
 });
 
-export { wagmiAdapter, wagmiMetadata, PROJECT_ID };
+const infuraRpcUrl = `https://bsc-mainnet.infura.io/v3/a5f583e4696b4f738f0cb5b52384b0f5`;
+
+export { wagmiAdapter, wagmiMetadata, PROJECT_ID, infuraRpcUrl };

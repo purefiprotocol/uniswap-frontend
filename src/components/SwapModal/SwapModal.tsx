@@ -61,7 +61,7 @@ import {
   getTransactionLink,
   sleep,
 } from '@/utils';
-import { DEFAULT_CHAIN_VIEM } from '@/config';
+import { DEFAULT_CHAIN_VIEM, infuraRpcUrl } from '@/config';
 
 import { AutoHeight } from '../AutoHeight';
 import { TxnLink } from '../TxnLink';
@@ -147,7 +147,7 @@ const SwapModal: FC<SwapModalProps> = (props) => {
 
   const publicClientConfig = {
     chain: isReady ? account.chain : DEFAULT_CHAIN_VIEM,
-    transport: isReady ? custom((window as any).ethereum!) : http(),
+    transport: isReady ? custom((window as any).ethereum!) : http(infuraRpcUrl),
   };
 
   const publicClient = createPublicClient(publicClientConfig);

@@ -34,7 +34,7 @@ import {
 } from '@ant-design/icons';
 
 import { useConnectModal, useTokenBalance, useQuoter } from '@/hooks';
-import { DEFAULT_CHAIN_VIEM, getConfig } from '@/config';
+import { DEFAULT_CHAIN_VIEM, getConfig, infuraRpcUrl } from '@/config';
 import { Slot0, SwapTypeEnum, TokenConfig } from '@/models';
 import {
   DEBOUNCE_DELAY,
@@ -67,7 +67,7 @@ const SwapCard: FC = () => {
 
   const publicClientConfig = {
     chain: isReady ? account.chain : DEFAULT_CHAIN_VIEM,
-    transport: isReady ? custom((window as any).ethereum!) : http(),
+    transport: isReady ? custom((window as any).ethereum!) : http(infuraRpcUrl),
   };
 
   const publicClient = createPublicClient(publicClientConfig);

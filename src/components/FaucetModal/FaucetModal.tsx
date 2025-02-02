@@ -7,7 +7,12 @@ import { toast } from 'react-toastify';
 import { ExportOutlined } from '@ant-design/icons';
 
 import { TokenConfig } from '@/models';
-import { DEFAULT_CHAIN, DEFAULT_CHAIN_VIEM, getConfig } from '@/config';
+import {
+  DEFAULT_CHAIN,
+  DEFAULT_CHAIN_VIEM,
+  getConfig,
+  infuraRpcUrl,
+} from '@/config';
 
 import { checkIfChainSupported, getTransactionLink, sortTokens } from '@/utils';
 
@@ -35,7 +40,7 @@ const FaucetModal: FC<FaucetModalProps> = (props) => {
 
   const publicClientConfig = {
     chain: isReady ? account.chain : DEFAULT_CHAIN_VIEM,
-    transport: isReady ? custom((window as any).ethereum!) : http(),
+    transport: isReady ? custom((window as any).ethereum!) : http(infuraRpcUrl),
   };
 
   const publicClient = createPublicClient(publicClientConfig);

@@ -47,7 +47,7 @@ import {
 } from '@ant-design/icons';
 import classNames from 'classnames';
 
-import { DEFAULT_CHAIN_VIEM } from '@/config';
+import { DEFAULT_CHAIN_VIEM, infuraRpcUrl } from '@/config';
 
 import { ContractConfig, PoolConfig, TokenConfig, Slot0 } from '@/models';
 import { checkIfChainSupported, getTransactionLink, sleep } from '@/utils';
@@ -142,7 +142,7 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
 
   const publicClientConfig = {
     chain: isReady ? account.chain : DEFAULT_CHAIN_VIEM,
-    transport: isReady ? custom((window as any).ethereum!) : http(),
+    transport: isReady ? custom((window as any).ethereum!) : http(infuraRpcUrl),
   };
 
   const publicClient = createPublicClient(publicClientConfig);

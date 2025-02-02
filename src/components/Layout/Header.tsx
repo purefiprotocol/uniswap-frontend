@@ -1,9 +1,11 @@
-import { FC, useState } from 'react';
+import { FC, useMemo, useState } from 'react';
 import { NavLink } from 'react-router-dom';
+import { useAccount } from 'wagmi';
 import { Button, Drawer, Flex, Layout } from 'antd';
 import { useMediaQuery } from 'react-responsive';
 import { MenuOutlined } from '@ant-design/icons';
 
+import { getConfig } from '@/config';
 import { ConnectButton } from '../ConnectButton';
 import { FaucetModal } from '../FaucetModal';
 
@@ -13,6 +15,15 @@ import logoSrc2 from '@/assets/icons/purefi.svg';
 import styles from './Layout.module.scss';
 
 const Navbar: FC = () => {
+  const account = useAccount();
+
+  const theConfig = useMemo(
+    () => getConfig(account.chainId),
+    [account.chainId],
+  );
+
+  const { faucet: nativeFaucet } = theConfig;
+
   const [isFaucetModalOpen, setIsFaucetModalOpen] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
@@ -77,15 +88,17 @@ const Navbar: FC = () => {
                     KYC
                   </NavLink>
                 </div>
-                <div className={styles.nav__item}>
-                  <button
-                    className={styles.nav__btn}
-                    type="button"
-                    onClick={openFaucetModal}
-                  >
-                    Faucets
-                  </button>
-                </div>
+                {!!nativeFaucet && (
+                  <div className={styles.nav__item}>
+                    <button
+                      className={styles.nav__btn}
+                      type="button"
+                      onClick={openFaucetModal}
+                    >
+                      Faucets
+                    </button>
+                  </div>
+                )}
               </>
             )}
           </Flex>
@@ -135,18 +148,21 @@ const Navbar: FC = () => {
               KYC
             </NavLink>
           </div>
-          <div className={styles.nav__item}>
-            <button
-              className={styles.nav__btn}
-              type="button"
-              onClick={() => {
-                closeDrawer();
-                openFaucetModal();
-              }}
-            >
-              Faucets
-            </button>
-          </div>
+
+          {!!nativeFaucet && (
+            <div className={styles.nav__item}>
+              <button
+                className={styles.nav__btn}
+                type="button"
+                onClick={() => {
+                  closeDrawer();
+                  openFaucetModal();
+                }}
+              >
+                Faucets
+              </button>
+            </div>
+          )}
         </Flex>
       </Drawer>
 
