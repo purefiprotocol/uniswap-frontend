@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { KycWidget } from '@purefi/kyc-sdk';
 import { toast } from 'react-toastify';
 import { ConfigProvider } from 'antd';
-import { polygonAmoy, sepolia, bsc } from 'viem/chains';
+import { bsc } from 'viem/chains';
 import {
   wagmiAdapter,
   PROJECT_ID,
@@ -16,7 +16,7 @@ import {
 } from './config';
 import { Layout } from './components';
 import { Home, Kyc, Liquidity, NotFound, Positions } from './pages';
-import sepoliaSrc from './assets/icons/sepolia.png';
+import bscSrc from './assets/icons/bsc.png';
 
 const queryClient = new QueryClient();
 
@@ -61,7 +61,7 @@ createAppKit({
     '--w3m-accent': '#fc72ff',
   },
   chainImages: {
-    [sepolia.id]: sepoliaSrc,
+    [bsc.id]: bscSrc,
   },
   termsConditionsUrl: `${window.location.origin}/terms.pdf`,
   allWallets: 'SHOW',

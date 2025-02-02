@@ -1,9 +1,9 @@
-import { AppKitNetwork, sepolia } from '@reown/appkit/networks';
-import { sepolia as sepoliaViem } from 'viem/chains';
+import { AppKitNetwork, bsc } from '@reown/appkit/networks';
+import { bsc as bscViem } from 'viem/chains';
 
-export const DEFAULT_CHAIN = sepolia;
-export const DEFAULT_CHAIN_VIEM = sepoliaViem;
+export const DEFAULT_CHAIN = bsc;
+export const DEFAULT_CHAIN_VIEM = bscViem;
 
-export const CHAINS: [AppKitNetwork, ...AppKitNetwork[]] = [sepolia];
+export const CHAINS: [AppKitNetwork, ...AppKitNetwork[]] = [bsc];
 
 export const CHAIN_IDS: (number | string)[] = CHAINS.map((chain) => chain.id);

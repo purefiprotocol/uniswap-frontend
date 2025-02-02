@@ -38,7 +38,7 @@ import {
 import classNames from 'classnames';
 
 import { useConnectModal, useLiquidityHelper, useTokenBalance } from '@/hooks';
-import { DEFAULT_CHAIN_VIEM, getConfig } from '@/config';
+import { DEFAULT_CHAIN_VIEM, getConfig, infuraRpcUrl } from '@/config';
 import {
   DirectionEnum,
   FeeTierEnum,
@@ -81,7 +81,7 @@ const SwapCard: FC = () => {
 
   const publicClientConfig = {
     chain: isReady ? account.chain : DEFAULT_CHAIN_VIEM,
-    transport: isReady ? custom((window as any).ethereum!) : http(),
+    transport: isReady ? custom((window as any).ethereum!) : http(infuraRpcUrl),
   };
 
   const publicClient = createPublicClient(publicClientConfig);

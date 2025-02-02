@@ -6,9 +6,9 @@ export const REFETCH_BALANCE_INTERVAL = 5 * 1000;
 
 export const DEBOUNCE_DELAY = 400;
 
-export const DEFAULT_SWAP_RULE_ID = '631';
+export const DEFAULT_SWAP_RULE_ID = '731';
 
-export const DEFAULT_LIQUIDITY_RULE_ID = '631';
+export const DEFAULT_LIQUIDITY_RULE_ID = '731';
 
 // price related
 export const BASE = 1.0001;
