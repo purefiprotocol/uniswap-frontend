@@ -1,6 +1,14 @@
 @import '@/styles/variables';
 
 .modal {
+  min-width: 440px;
+  top: 150px;
+
+  @media (max-width: $mobile) {
+    min-width: unset;
+    top: 100px;
+  }
+
   :global(.ant-modal-close-x) {
     color: $white;
   }

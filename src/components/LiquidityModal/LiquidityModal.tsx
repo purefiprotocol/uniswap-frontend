@@ -1091,7 +1091,6 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
       open={open}
       onCancel={cancelHandler}
       footer={null}
-      style={{ top: 150, minWidth: '440px' }}
       maskClosable={false}
       afterOpenChange={afterOpenChangeHandler}
       destroyOnClose

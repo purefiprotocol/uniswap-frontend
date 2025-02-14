@@ -1,0 +1,11 @@
+@import '@/styles/variables';
+
+.positions {
+  margin: 68px auto 48px;
+  max-width: 1000px;
+  width: 75%;
+
+  @media (max-width: $mobile) {
+    width: 100%;
+  }
+}

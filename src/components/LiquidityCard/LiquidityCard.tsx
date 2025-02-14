@@ -19,7 +19,16 @@ import {
   SourceInfo,
 } from 'react-number-format';
 
-import { Button, Card, Col, Flex, Radio, RadioChangeEvent, Row } from 'antd';
+import {
+  Button,
+  Card,
+  Col,
+  Flex,
+  Radio,
+  RadioChangeEvent,
+  Row,
+  Typography,
+} from 'antd';
 import {
   CheckOutlined,
   MinusOutlined,
@@ -59,6 +68,8 @@ import { AutoHeight } from '../AutoHeight';
 import { LiquidityModal } from '../LiquidityModal';
 
 import styles from './LiquidityCard.module.scss';
+
+const { Text } = Typography;
 
 const SwapCard: FC = () => {
   const account = useAccount();
@@ -913,7 +924,7 @@ const SwapCard: FC = () => {
         <Flex gap="small" vertical style={{ marginTop: 28 }}>
           <Row gutter={16} align="middle">
             <Col className="gutter-row" span={12}>
-              <Flex gap="middle" align="center">
+              <Flex className={styles.prices} gap="middle" align="flex-start">
                 <div className={styles.subtitle}>Price Range</div>
                 <div className={styles.priceByToken}>
                   <Radio.Group
@@ -935,6 +946,7 @@ const SwapCard: FC = () => {
             <Col className="gutter-row" span={12}>
               <Flex
                 className={styles.percentages}
+                align="flex-start"
                 justify="flex-end"
                 gap="small"
               >
@@ -1014,7 +1026,7 @@ const SwapCard: FC = () => {
           <Flex gap="small" justify="space-between">
             <div className={styles.priceWrapper}>
               <Flex>
-                <div style={{ width: '100%' }}>
+                <div style={{ width: '100%', paddingRight: 5 }}>
                   <div className={styles.priceWrapper_hint}>
                     <span>Low price</span>
                     <b style={{ color: '#fff' }}>[Tick {tickLower}]</b>
@@ -1072,7 +1084,7 @@ const SwapCard: FC = () => {
 
             <div className={styles.priceWrapper}>
               <Flex>
-                <div style={{ width: '100%' }}>
+                <div style={{ width: '100%', paddingRight: 5 }}>
                   <div className={styles.priceWrapper_hint}>
                     <span>High price</span>
                     <b style={{ color: '#fff' }}> [Tick {tickUpper}]</b>
@@ -1136,7 +1148,11 @@ const SwapCard: FC = () => {
           <Flex gap="small" justify="space-between">
             <Flex className={leftTokenWrapperClassName} gap="small" vertical>
               <Row gutter={16} align="middle">
-                <Col className="gutter-row" span={16}>
+                <Col
+                  className="gutter-row"
+                  xs={{ span: 24, order: 2 }}
+                  md={{ span: 16, order: 1 }}
+                >
                   <NumericFormat
                     name="leftTokenAmount"
                     className={leftTokenAmountClassName}
@@ -1153,7 +1169,11 @@ const SwapCard: FC = () => {
                     required
                   />
                 </Col>
-                <Col className="gutter-row" span={8}>
+                <Col
+                  className="gutter-row"
+                  xs={{ span: 24, order: 1 }}
+                  md={{ span: 8, order: 2 }}
+                >
                   <Flex align="center" justify="flex-end">
                     <div className={styles.asset2}>
                       <div className={styles.icon_wrapper}>
@@ -1169,7 +1189,9 @@ const SwapCard: FC = () => {
 
               <Flex align="center" justify="flex-end">
                 <div className={styles.balance}>
-                  <span>{renderBalanceText(leftTokenBalanceInfo)}</span>
+                  <Text ellipsis>
+                    {renderBalanceText(leftTokenBalanceInfo)}
+                  </Text>
                   {canSetMaxValueLeftToken && (
                     <button
                       className={styles.maxButton}
@@ -1185,7 +1207,11 @@ const SwapCard: FC = () => {
 
             <Flex className={rightTokenWrapperClassName} gap="small" vertical>
               <Row gutter={16} align="middle">
-                <Col className="gutter-row" span={16}>
+                <Col
+                  className="gutter-row"
+                  xs={{ span: 24, order: 2 }}
+                  md={{ span: 16, order: 1 }}
+                >
                   <NumericFormat
                     name="rightTokenAmount"
                     className={rightTokenAmountClassName}
@@ -1202,20 +1228,28 @@ const SwapCard: FC = () => {
                     required
                   />
                 </Col>
-                <Col className="gutter-row" span={8}>
+                <Col
+                  className="gutter-row"
+                  xs={{ span: 24, order: 1 }}
+                  md={{ span: 8, order: 2 }}
+                >
                   <Flex align="center" justify="flex-end">
                     <div className={styles.asset2}>
                       <div className={styles.icon_wrapper}>
                         {renderIcon(rightToken)}
                       </div>
-                      <div>{renderSymbol(rightToken)}</div>
+                      <div className={styles.symbol_wrapper}>
+                        {renderSymbol(rightToken)}
+                      </div>
                     </div>
                   </Flex>
                 </Col>
               </Row>
               <Flex align="center" justify="flex-end">
                 <div className={styles.balance}>
-                  <span>{renderBalanceText(rightTokenBalanceInfo)}</span>
+                  <Text ellipsis>
+                    {renderBalanceText(rightTokenBalanceInfo)}
+                  </Text>
                   {canSetMaxValueRightToken && (
                     <button
                       className={styles.maxButton}
