@@ -121,6 +121,11 @@
   height: 40px;
   font-weight: 500;
 
+  @media (max-width: $mobile) {
+    width: 100%;
+    margin-bottom: 5px;
+  }
+
   .icon_wrapper {
     display: flex;
     align-items: center;
@@ -168,6 +173,16 @@
   color: $white;
   font-size: 14px;
   font-weight: 500;
+
+  @media (max-width: $mobile) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    span {
+      width: 100px;
+    }
+  }
 }
 
 .item {
@@ -274,6 +289,10 @@
     .tier_desc {
       font-size: 11px;
       color: $gray2;
+
+      @media (max-width: $mobile) {
+        font-size: 8px;
+      }
     }
 
     &:hover {
@@ -300,8 +319,20 @@
   }
 }
 
+.prices {
+  width: 100%;
+
+  @media (max-width: $mobile) {
+    flex-wrap: wrap;
+  }
+}
+
 .percentages {
   width: 100%;
+
+  @media (max-width: $mobile) {
+    flex-wrap: wrap;
+  }
 
   .percentage {
     padding: 4px 8px;
@@ -372,6 +403,7 @@
   font-size: 20px;
   line-height: 30px;
   padding: 1px 2px;
+  text-overflow: ellipsis;
 }
 
 span.priceInput {
@@ -389,6 +421,7 @@ span.priceInput {
   color: #fff;
   text-align: left;
   font-size: 20px;
+  text-overflow: ellipsis;
 }
 
 .increaseButton {
@@ -416,4 +449,8 @@ span.priceInput {
   padding: 12px;
   border-radius: 8px;
   border: 1px solid $gray1;
+
+  @media (max-width: $mobile) {
+    font-size: 14px;
+  }
 }

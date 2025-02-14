@@ -15,7 +15,7 @@ import {
   DEFAULT_CHAIN,
 } from './config';
 import { Layout } from './components';
-import { Home, Kyc, Liquidity, NotFound } from './pages';
+import { Home, Kyc, Liquidity, NotFound, Positions } from './pages';
 import sepoliaSrc from './assets/icons/sepolia.png';
 
 const queryClient = new QueryClient();
@@ -96,6 +96,7 @@ const App: FC = () => {
                 <Route path="/" element={<Layout />}>
                   <Route index element={<Home />} />
                   <Route path="/liquidity" element={<Liquidity />} />
+                  <Route path="/positions" element={<Positions />} />
                   <Route path="/kyc" element={<Kyc />} />
                   <Route path="*" element={<NotFound />} />
                 </Route>

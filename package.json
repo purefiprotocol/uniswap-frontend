@@ -33,6 +33,7 @@
     "react-animate-height": "^3.2.3",
     "react-dom": "^18.2.0",
     "react-number-format": "^5.4.0",
+    "react-responsive": "^10.0.0",
     "react-router-dom": "^6.23.1",
     "react-toastify": "^10.0.5",
     "use-debounce": "^10.0.3",

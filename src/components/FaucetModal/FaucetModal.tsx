@@ -143,7 +143,6 @@ const FaucetModal: FC<FaucetModalProps> = (props) => {
       onCancel={cancelHandler}
       afterClose={afterCloseHandler}
       footer={null}
-      style={{ top: 250, minWidth: '440px' }}
       maskClosable={false}
       destroyOnClose
     >
