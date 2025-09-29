@@ -4,7 +4,10 @@ const useConnectModal = () => {
   const { open, close } = useAppKit();
 
   return {
-    openConnectModal: () => open({ view: 'Connect' }),
+    openConnectModal: () => {
+      console.log('connect view');
+      open({ view: 'Connect' });
+    },
   };
 };
 
