@@ -63,7 +63,7 @@ createAppKit({
   chainImages: {
     [polygonAmoy.id]: polygonSrc,
   },
-  termsConditionsUrl: 'https://stage.dashboard.purefi.io/terms.pdf',
+  termsConditionsUrl: `${window.location.origin}/terms.pdf`,
   allWallets: 'SHOW',
   features: {
     swaps: false,
@@ -77,7 +77,7 @@ createAppKit({
 
 const App: FC = () => {
   useEffect(() => {
-    PureFI.setIssuerUrl('https://stage.issuer.app.purefi.io');
+    PureFI.setIssuerUrl(import.meta.env.VITE_API_URL);
     KycWidget.setConfig({
       onSuccess: toast.success,
       onWarning: toast.warn,

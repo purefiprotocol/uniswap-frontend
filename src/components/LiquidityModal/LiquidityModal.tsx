@@ -1,6 +1,14 @@
 import { FC, useEffect, useState } from 'react';
-import { NavLink } from 'react-router-dom';
-import { Button, Collapse, Flex, Modal, StepProps, Steps } from 'antd';
+import { NavLink, useNavigate } from 'react-router-dom';
+import {
+  Button,
+  Collapse,
+  Flex,
+  Modal,
+  StepProps,
+  Steps,
+  Typography,
+} from 'antd';
 import { useAccount } from 'wagmi';
 import {
   BaseError,
@@ -11,6 +19,7 @@ import {
   erc20Abi,
   formatUnits,
   http,
+  maxUint256,
   parseUnits,
   toBytes,
 } from 'viem';
@@ -19,18 +28,24 @@ import {
   PureFI,
   PureFIError,
   PureFIErrorCodes,
-  PureFIPayload,
-  SignatureType,
+  createDomain,
+  createRuleV5Types,
+  PureFIRuleV5Payload,
+  RuleV5Data,
+  RuleV5Payload,
 } from '@purefi/kyc-sdk';
+
 import {
   CheckCircleOutlined,
   LoadingOutlined,
   SignatureOutlined,
   SolutionOutlined,
+  WarningOutlined,
+  CloseCircleOutlined,
 } from '@ant-design/icons';
 import classNames from 'classnames';
 
-import { DEFAULT_CHAIN } from '@/config';
+import { DEFAULT_CHAIN_VIEM } from '@/config';
 
 import { ContractConfig, PoolConfig, TokenConfig, Slot0 } from '@/models';
 import { checkIfChainSupported, getTransactionLink, sleep } from '@/utils';
@@ -53,6 +68,7 @@ interface LiquidityModalProps {
   token1: TokenConfig;
   pool: PoolConfig;
   router: ContractConfig;
+  routerHelper: ContractConfig;
   slot0: Slot0;
   slippage: number;
   onCancel: () => void;
@@ -107,11 +123,13 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
     token1,
     pool,
     router,
+    routerHelper,
     slot0,
     slippage,
     onCancel,
   } = props;
 
+  const navigate = useNavigate();
   const account = useAccount();
 
   const isWalletConnected = account.isConnected;
@@ -119,7 +137,7 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
   const isReady = isWalletConnected && isChainSupported;
 
   const publicClientConfig = {
-    chain: isReady ? account.chain : DEFAULT_CHAIN,
+    chain: isReady ? account.chain : DEFAULT_CHAIN_VIEM,
     transport: isReady ? custom((window as any).ethereum!) : http(),
   };
 
@@ -162,18 +180,12 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
 
   const [simulationError, setSimulationError] = useState<string | null>(null);
   const [addError, setAddError] = useState<string | null>(null);
+  const [purefiError, setPurefiError] = useState<string | null>(null);
+  const [isKycAllowed, setIsKycAllowed] = useState(false);
 
-  const [purefiPayload, setPurefiPayload] = useState<PureFIPayload | null>(
-    null,
-  );
+  const [purefiPayload, setPurefiPayload] =
+    useState<PureFIRuleV5Payload | null>(null);
   const [purefiData, setPurefiData] = useState<string | null>(null);
-
-  const messageData = {
-    sender: account.address!,
-    receiver: router.address,
-    ruleId: pool.liquidityRuleId,
-    chainId: account.chainId,
-  };
 
   const reset = () => {
     setStep(0);
@@ -212,6 +224,8 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
 
     setSimulationError(null);
     setAddError(null);
+    setPurefiError(null);
+    setIsKycAllowed(false);
     setAddCompleted(false);
 
     setApproveLoadingMessage('Confirm approve transaction');
@@ -226,14 +240,16 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
 
     const [address] = await walletClient.getAddresses();
 
-    await sleep(100);
-
-    const allowance = await publicClient.readContract({
+    const allowancePromise = publicClient.readContract({
       address: leftToken.address,
       abi: erc20Abi,
       functionName: 'allowance',
       args: [address, router.address],
     });
+
+    const sleepPromise = sleep(500);
+
+    const [allowance] = await Promise.all([allowancePromise, sleepPromise]);
 
     return allowance;
   };
@@ -246,14 +262,16 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
 
     const [address] = await walletClient.getAddresses();
 
-    await sleep(100);
-
-    const allowance = await publicClient.readContract({
+    const allowancePromise = publicClient.readContract({
       address: rightToken.address,
       abi: erc20Abi,
       functionName: 'allowance',
       args: [address, router.address],
     });
+
+    const sleepPromise = sleep(500);
+
+    const [allowance] = await Promise.all([allowancePromise, sleepPromise]);
 
     return allowance;
   };
@@ -280,7 +298,7 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
         const isLeftAllowanceOk =
           leftAllowance >= parseUnits(leftTokenAmount, leftToken.decimals);
         const isRightAllowanceOk =
-          leftAllowance >= parseUnits(rightTokenAmount, rightToken.decimals);
+          rightAllowance >= parseUnits(rightTokenAmount, rightToken.decimals);
 
         if (isLeftAllowanceOk) {
           setFrozenLeftTokenAmount(leftTokenAmount);
@@ -337,11 +355,6 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
 
       const [address] = await walletClient.getAddresses();
 
-      const parsedLeftTokenAmount = parseUnits(
-        leftTokenAmount,
-        leftToken.decimals,
-      );
-
       setApproveLoadingMessage(
         `Approve ${leftToken.symbol} transaction in progress`,
       );
@@ -351,7 +364,7 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
         abi: erc20Abi,
         functionName: 'approve',
         account: address,
-        args: [router.address, parsedLeftTokenAmount],
+        args: [router.address, maxUint256],
       });
 
       const approveReceipt = await publicClient.waitForTransactionReceipt({
@@ -449,11 +462,6 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
 
       const [address] = await walletClient.getAddresses();
 
-      const parsedRightTokenAmount = parseUnits(
-        rightTokenAmount,
-        rightToken.decimals,
-      );
-
       setApproveLoadingMessage(
         `Approve ${rightToken.symbol} transaction in progress`,
       );
@@ -463,7 +471,7 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
         abi: erc20Abi,
         functionName: 'approve',
         account: address,
-        args: [router.address, parsedRightTokenAmount],
+        args: [router.address, maxUint256],
       });
 
       const approveReceipt = await publicClient.waitForTransactionReceipt({
@@ -547,10 +555,6 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
     onCancel();
   };
 
-  const afterCloseHandler = () => {
-    reset();
-  };
-
   const signMessageHandler = async () => {
     try {
       const walletClient = createWalletClient({
@@ -570,15 +574,47 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
 
       const [address] = await walletClient.getAddresses();
 
-      const message = JSON.stringify(messageData);
+      const domain = createDomain('PureFi', account.chainId!);
 
-      const signature = await walletClient.signMessage({
+      const ruleV5Payload: RuleV5Payload = {
+        ruleId: pool.liquidityRuleId,
+        from: account.address!,
+        to: router.address,
+        tokenData0: {
+          address: leftToken.address,
+          value: parseUnits(leftTokenAmount, leftToken.decimals).toString(),
+          decimals: leftToken.decimals.toString(),
+        },
+        tokenData1: {
+          address: rightToken.address,
+          value: parseUnits(rightTokenAmount, rightToken.decimals).toString(),
+          decimals: rightToken.decimals.toString(),
+        },
+        packageType: '48',
+      };
+
+      const ruleV5Data: RuleV5Data = {
+        account: {
+          address: account.address!,
+        },
+        chain: {
+          id: account.chainId!.toString(),
+        },
+        payload: ruleV5Payload,
+      };
+
+      const ruleV5Types = createRuleV5Types(ruleV5Payload);
+
+      const signature = await walletClient.signTypedData({
         account: address,
-        message,
+        domain,
+        types: ruleV5Types,
+        primaryType: 'Data',
+        message: ruleV5Data,
       });
 
-      const payload: PureFIPayload = {
-        message,
+      const payload: PureFIRuleV5Payload = {
+        message: ruleV5Data,
         signature,
       };
 
@@ -613,71 +649,58 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
   };
 
   const verifyData = async () => {
-    try {
-      setStep22Loading(true);
+    if (!isKycAllowed) {
+      try {
+        setStep22Loading(true);
 
-      const data = await PureFI.verifyRule(purefiPayload!, SignatureType.ECDSA);
+        await sleep(500);
 
-      setPurefiData(data);
+        const data = await PureFI.verifyRuleV5(purefiPayload!);
 
-      setPurefiStepItems((prev) => {
-        const step1 = prev[0];
-        const step2 = prev[1];
-        step2.status = 'finish';
+        setPurefiData(data);
 
-        const newSteps = [step1, step2];
-        return newSteps;
-      });
+        setPurefiStepItems((prev) => {
+          const step1 = prev[0];
+          const step2 = prev[1];
+          step2.status = 'finish';
 
-      setStepItems((prev) => {
-        const step1 = prev[0];
-        const step2 = prev[1];
-        const step3 = prev[2];
-        const step4 = prev[3];
-        step2.status = 'finish';
-        step3.status = 'process';
-
-        const newSteps = [step1, step2, step3, step4];
-        return newSteps;
-      });
-
-      setStep(2);
-    } catch (error: unknown) {
-      const theError = error as PureFIError;
-
-      if (theError.code === PureFIErrorCodes.FORBIDDEN) {
-        const toastContent = (
-          <NavLink
-            to="/kyc"
-            style={{
-              textDecoration: 'none',
-              paddingBottom: '5px',
-              borderBottom: '1px solid',
-              color: 'white',
-            }}
-          >
-            {theError.message}
-          </NavLink>
-        );
-
-        toast.warn(toastContent, {
-          autoClose: false,
-          closeOnClick: true,
+          const newSteps = [step1, step2];
+          return newSteps;
         });
-      } else {
-        toast.error(theError.message);
+
+        setStepItems((prev) => {
+          const step1 = prev[0];
+          const step2 = prev[1];
+          const step3 = prev[2];
+          const step4 = prev[3];
+          step2.status = 'finish';
+          step3.status = 'process';
+
+          const newSteps = [step1, step2, step3, step4];
+          return newSteps;
+        });
+
+        setStep(2);
+      } catch (error: unknown) {
+        const theError = error as PureFIError;
+
+        setPurefiError(theError.message);
+
+        if (theError.code === PureFIErrorCodes.FORBIDDEN) {
+          setIsKycAllowed(true);
+        }
+
+        setPurefiStepItems((prev) => {
+          const step1 = prev[0];
+          const step2 = prev[1];
+          step2.status = 'error';
+
+          const newSteps = [step1, step2];
+          return newSteps;
+        });
+      } finally {
+        setStep22Loading(false);
       }
-
-      setPurefiStepItems((prev) => {
-        const step1 = prev[0];
-        const step2 = prev[1];
-        step2.status = 'error';
-
-        const newSteps = [step1, step2];
-        return newSteps;
-      });
-    } finally {
-      setStep22Loading(false);
     }
   };
 
@@ -702,8 +725,6 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
       });
 
       const [address] = await walletClient.getAddresses();
-
-      await sleep(300);
 
       const poolKey: any[] = [
         token0.address,
@@ -734,8 +755,8 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
 
       const liquidityDelta = await publicClient.readContract({
         account: address,
-        address: router.address,
-        abi: router.abi,
+        address: routerHelper.address,
+        abi: routerHelper.abi,
         functionName: 'calculateLiquidityDelta',
         args: calculateLiquidityDeltaArgs,
       });
@@ -758,13 +779,17 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
         takeClaims,
       ];
 
-      const result = await publicClient.simulateContract({
+      const simulationPromise = publicClient.simulateContract({
         account: address,
         address: router.address,
         abi: router.abi,
         functionName: 'modifyLiquidity',
         args,
       });
+
+      const sleepPromise = sleep(1000);
+
+      await Promise.all([simulationPromise, sleepPromise]);
 
       setStep(3);
 
@@ -868,8 +893,8 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
 
       const liquidityDelta = await publicClient.readContract({
         account: address,
-        address: router.address,
-        abi: router.abi,
+        address: routerHelper.address,
+        abi: routerHelper.abi,
         functionName: 'calculateLiquidityDelta',
         args: calculateLiquidityDeltaArgs,
       });
@@ -977,10 +1002,26 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
   };
 
   useEffect(() => {
-    if (step === 2) {
+    if (step === 1) {
+      signMessageHandler();
+    } else if (step === 2) {
       simulateHandler();
+    } else if (step === 3) {
+      addLiquidityHandler();
     }
   }, [step]);
+
+  useEffect(() => {
+    if (purefiStep === 1) {
+      verifyData();
+    }
+  }, [purefiStep]);
+
+  useEffect(() => {
+    return () => {
+      reset();
+    };
+  }, []);
 
   const specialClassName = classNames({
     [styles.special]: !step4Loading && !addError && !addCompleted,
@@ -1007,7 +1048,6 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
       title={title}
       open={open}
       onCancel={cancelHandler}
-      afterClose={afterCloseHandler}
       footer={null}
       style={{ top: 150, minWidth: '440px' }}
       maskClosable={false}
@@ -1065,26 +1105,37 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
                           vertical
                         >
                           <Flex className={styles.item} justify="space-between">
-                            <div className={styles.item__title}>
+                            <div
+                              className={`${styles.item__title} ${styles.item__title_margin}`}
+                            >
                               Current allowance
                             </div>
                             <div className={styles.white}>
                               {currentAllowanceLeft !== null && (
-                                <>
+                                <Typography.Text
+                                  style={{ maxWidth: '100%' }}
+                                  ellipsis={{ suffix: ` ${leftToken.symbol}` }}
+                                >
                                   {formatUnits(
                                     currentAllowanceLeft,
                                     leftToken.decimals,
-                                  )}{' '}
-                                  {leftToken.symbol}
-                                </>
+                                  )}
+                                </Typography.Text>
                               )}
                             </div>
                           </Flex>
 
                           <Flex className={styles.item} justify="space-between">
-                            <div>Required allowance</div>
+                            <div className={styles.item__title_margin}>
+                              Required allowance
+                            </div>
                             <div className={styles.white}>
-                              {leftTokenAmount.toString()} {leftToken.symbol}
+                              <Typography.Text
+                                style={{ maxWidth: '100%' }}
+                                ellipsis={{ suffix: ` ${leftToken.symbol}` }}
+                              >
+                                {leftTokenAmount.toString()}
+                              </Typography.Text>
                             </div>
                           </Flex>
                         </Flex>
@@ -1100,21 +1151,30 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
                             </div>
                             <div className={styles.white}>
                               {currentAllowanceRight !== null && (
-                                <>
+                                <Typography.Text
+                                  style={{ maxWidth: '100%' }}
+                                  ellipsis={{ suffix: ` ${rightToken.symbol}` }}
+                                >
                                   {formatUnits(
                                     currentAllowanceRight,
                                     rightToken.decimals,
-                                  )}{' '}
-                                  {rightToken.symbol}
-                                </>
+                                  )}
+                                </Typography.Text>
                               )}
                             </div>
                           </Flex>
 
                           <Flex className={styles.item} justify="space-between">
-                            <div>Required allowance</div>
+                            <div className={styles.item__title_margin}>
+                              Required allowance
+                            </div>
                             <div className={styles.white}>
-                              {rightTokenAmount.toString()} {rightToken.symbol}
+                              <Typography.Text
+                                style={{ maxWidth: '100%' }}
+                                ellipsis={{ suffix: ` ${rightToken.symbol}` }}
+                              >
+                                {rightTokenAmount.toString()}
+                              </Typography.Text>
                             </div>
                           </Flex>
                         </Flex>
@@ -1126,32 +1186,46 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
             </div>
 
             <div className={styles.step__footer}>
-              {currentAllowanceLeft !== null &&
-                currentAllowanceLeft <
-                  parseUnits(leftTokenAmount, leftToken.decimals) && (
-                  <Button
-                    className={styles.theButton}
-                    onClick={leftApproveHandler}
-                    disabled={step1Loading || approveLoading}
-                    block
-                  >
-                    Approve {leftToken.symbol}
-                  </Button>
-                )}
+              {step1Loading && (
+                <Button
+                  className={styles.theButton}
+                  onClick={leftApproveHandler}
+                  disabled={step1Loading}
+                  block
+                >
+                  Checking...
+                </Button>
+              )}
+              {!step1Loading && (
+                <>
+                  {currentAllowanceLeft !== null &&
+                    currentAllowanceLeft <
+                      parseUnits(leftTokenAmount, leftToken.decimals) && (
+                      <Button
+                        className={styles.theButton}
+                        onClick={leftApproveHandler}
+                        disabled={step1Loading || approveLoading}
+                        block
+                      >
+                        Approve {leftToken.symbol}
+                      </Button>
+                    )}
 
-              {currentAllowanceRight !== null &&
-                currentAllowanceRight <
-                  parseUnits(rightTokenAmount, rightToken.decimals) && (
-                  <Button
-                    className={styles.theButton}
-                    onClick={rightApproveHandler}
-                    disabled={step1Loading || approveLoading}
-                    style={{ marginTop: '10px' }}
-                    block
-                  >
-                    Approve {rightToken.symbol}
-                  </Button>
-                )}
+                  {currentAllowanceRight !== null &&
+                    currentAllowanceRight <
+                      parseUnits(rightTokenAmount, rightToken.decimals) && (
+                      <Button
+                        className={styles.theButton}
+                        onClick={rightApproveHandler}
+                        disabled={step1Loading || approveLoading}
+                        style={{ marginTop: '10px' }}
+                        block
+                      >
+                        Approve {rightToken.symbol}
+                      </Button>
+                    )}
+                </>
+              )}
             </div>
           </div>
         )}
@@ -1169,26 +1243,19 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
 
               {purefiStep === 0 && (
                 <div>
-                  {step21Loading && (
-                    <div className={styles.loader__container}>
-                      <div className={styles.loader__message}>Sign message</div>
-                      <div className={styles.loader__spinner}>
-                        <LoadingOutlined />
-                      </div>
-                      <div className={styles.loader__hint}>
-                        Proceed in your wallet
-                      </div>
-                    </div>
-                  )}
-
-                  {!step21Loading && (
-                    <textarea
-                      className={styles.textarea}
-                      value={JSON.stringify(messageData, undefined, 4)}
-                      rows={8}
-                      onChange={() => {}}
-                    />
-                  )}
+                  <div className={styles.loader__container}>
+                    <div className={styles.loader__message}>Sign message</div>
+                    {step21Loading && (
+                      <>
+                        <div className={styles.loader__spinner}>
+                          <LoadingOutlined />
+                        </div>
+                        <div className={styles.loader__hint}>
+                          Proceed in your wallet
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -1204,20 +1271,21 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
                       </div>
                     </div>
                   )}
-                  {!step22Loading && (
-                    <textarea
-                      className={styles.textarea}
-                      value={JSON.stringify(
-                        {
-                          message: messageData,
-                          signature: `${purefiPayload?.signature.toString().slice(0, 50)}...`,
-                        },
-                        undefined,
-                        4,
-                      )}
-                      rows={11}
-                      onChange={() => {}}
-                    />
+
+                  {!step22Loading && purefiError && (
+                    <div className={styles.loader__container}>
+                      <div className={styles.loader__message}>
+                        {purefiError}
+                      </div>
+                      <div className={styles.loader__spinner}>
+                        {isKycAllowed && (
+                          <WarningOutlined style={{ color: '#e6a700' }} />
+                        )}
+                        {!isKycAllowed && (
+                          <CloseCircleOutlined style={{ color: '#ff4d4f' }} />
+                        )}
+                      </div>
+                    </div>
                   )}
                 </div>
               )}
@@ -1231,19 +1299,36 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
                   disabled={step21Loading}
                   block
                 >
-                  Sign Message
+                  Sign
                 </Button>
               )}
 
               {purefiStep === 1 && (
-                <Button
-                  className={styles.theButton}
-                  onClick={verifyData}
-                  disabled={step22Loading}
-                  block
-                >
-                  Verify
-                </Button>
+                <>
+                  {!!purefiError && isKycAllowed && (
+                    <Button
+                      className={styles.theButton}
+                      onClick={() => {
+                        navigate('/kyc');
+                      }}
+                      block
+                    >
+                      Start verification
+                    </Button>
+                  )}
+
+                  {!isKycAllowed && (
+                    <Button
+                      className={styles.theButton}
+                      onClick={verifyData}
+                      disabled={step22Loading}
+                      block
+                    >
+                      {step22Loading && 'Verifying...'}
+                      {!step22Loading && 'Verify'}
+                    </Button>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -1292,7 +1377,8 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
                 disabled={step3Loading}
                 block
               >
-                Simulate
+                {step3Loading && 'Simulating...'}
+                {!step3Loading && 'Simulate'}
               </Button>
 
               {simulationError && (
