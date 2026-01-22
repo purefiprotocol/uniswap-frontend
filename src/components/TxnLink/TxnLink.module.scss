@@ -1,6 +1,8 @@
+@import '@/styles/variables';
+
 .link {
   text-decoration: none;
-  color: #ffffff;
+  color: $white;
 
   &:hover {
     text-decoration: underline;

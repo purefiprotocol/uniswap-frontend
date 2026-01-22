@@ -120,7 +120,7 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
 
   const publicClientConfig = {
     chain: isReady ? account.chain : DEFAULT_CHAIN,
-    transport: isReady ? custom(window.ethereum!) : http(),
+    transport: isReady ? custom((window as any).ethereum!) : http(),
   };
 
   const publicClient = createPublicClient(publicClientConfig);
@@ -221,7 +221,7 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
   const getAllowanceLeft = async () => {
     const walletClient = createWalletClient({
       chain: account.chain!,
-      transport: custom(window.ethereum!),
+      transport: custom((window as any).ethereum!),
     });
 
     const [address] = await walletClient.getAddresses();
@@ -241,7 +241,7 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
   const getAllowanceRight = async () => {
     const walletClient = createWalletClient({
       chain: account.chain!,
-      transport: custom(window.ethereum!),
+      transport: custom((window as any).ethereum!),
     });
 
     const [address] = await walletClient.getAddresses();
@@ -322,7 +322,7 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
     try {
       const walletClient = createWalletClient({
         chain: account.chain!,
-        transport: custom(window.ethereum!),
+        transport: custom((window as any).ethereum!),
       });
 
       setApproveLoading(true);
@@ -434,7 +434,7 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
     try {
       const walletClient = createWalletClient({
         chain: account.chain!,
-        transport: custom(window.ethereum!),
+        transport: custom((window as any).ethereum!),
       });
 
       setApproveLoading(true);
@@ -555,7 +555,7 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
     try {
       const walletClient = createWalletClient({
         chain: account.chain!,
-        transport: custom(window.ethereum!),
+        transport: custom((window as any).ethereum!),
       });
 
       setStep21Loading(true);
@@ -685,7 +685,7 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
     try {
       const walletClient = createWalletClient({
         chain: account.chain!,
-        transport: custom(window.ethereum!),
+        transport: custom((window as any).ethereum!),
       });
 
       setStep3Loading(true);
@@ -820,7 +820,7 @@ const LiquidityModal: FC<LiquidityModalProps> = (props) => {
     try {
       const walletClient = createWalletClient({
         chain: account.chain!,
-        transport: custom(window.ethereum!),
+        transport: custom((window as any).ethereum!),
       });
 
       setStep4Loading(true);
