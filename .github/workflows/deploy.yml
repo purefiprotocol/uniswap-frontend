@@ -1,0 +1,47 @@
+name: Publish app
+
+on:
+  push:
+    branches: [main]
+
+  workflow_dispatch:
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+      DISABLE_ESLINT_PLUGIN: 'true'
+
+    steps:
+      - name: Check out main branch
+        uses: actions/checkout@v2
+        with:
+          ref: main
+
+      - name: Use specific node version
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20.13.1
+
+      - name: Make envfile
+        uses: SpicyPizza/create-envfile@v1
+        with:
+          envkey_VITE_WALLET_CONNECT_PROJECT_ID: ${{ secrets.VITE_WALLET_CONNECT_PROJECT_ID }}
+          file_name: .env
+
+      - name: Install dependencies with yarn
+        run: yarn
+
+      - name: Build artifact
+        run: yarn build
+
+      - name: Deploy artifact to S3 and invalidate Cloudfront
+        uses: lbertenasco/s3-deploy@v1
+        with:
+          folder: dist
+          bucket: ${{ secrets.AWS_BUCKET }}
+          dist-id: ${{ secrets.AWS_CLOUDFRONT_DIST_ID }}
+          invalidation: / *
