@@ -1,30 +1,37 @@
-# React + TypeScript + Vite
+# PureFi | Uniswap
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Frontend React+Typescript application represents a decentralized exchange built on the Uniswap V4 protocol and enhanced with PureFi’s compliance hooks
 
-Currently, two official plugins are available:
+## Live Demo
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Live Demo [here](https://stage.dex.purefi.io/)
 
-## Expanding the ESLint configuration
+## PureFi Hooks Repository
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+Can be found [here](https://github.com/purefiprotocol/purefi-compliant-swap)
 
-- Configure the top-level `parserOptions` property like this:
+## Local Development
 
-```js
-export default {
-  // other rules...
-  parserOptions: {
-    ecmaVersion: 'latest',
-    sourceType: 'module',
-    project: ['./tsconfig.json', './tsconfig.node.json'],
-    tsconfigRootDir: __dirname,
-  },
-}
+Install dependencies
+
+```bash
+yarn
 ```
 
-- Replace `plugin:@typescript-eslint/recommended` to `plugin:@typescript-eslint/recommended-type-checked` or `plugin:@typescript-eslint/strict-type-checked`
-- Optionally add `plugin:@typescript-eslint/stylistic-type-checked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and add `plugin:react/recommended` & `plugin:react/jsx-runtime` to the `extends` list
+Copy .env.sample file from .env
+
+```bash
+cp .env.sample .env
+```
+
+Provide VITE_WALLET_CONNECT_PROJECT_ID value in .env
+
+```bash
+VITE_WALLET_CONNECT_PROJECT_ID=********************************
+```
+
+Start dev server
+
+```bash
+yarn start
+```

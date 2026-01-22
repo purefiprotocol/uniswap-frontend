@@ -39,6 +39,11 @@ export interface TokenConfig {
   symbol: string;
   decimals: number;
   icon?: string;
+  faucet?: {
+    address: `0x${string}`;
+    abi: unknown[];
+    functionName: string;
+  };
 }
 
 export interface PoolConfig {
@@ -66,4 +71,8 @@ export interface Config {
   poolManagerViewer: ContractConfig;
   quoter: ContractConfig;
   pools: PoolConfig[];
+  faucet?: {
+    symbol: string;
+    url: string;
+  };
 }
