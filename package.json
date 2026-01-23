@@ -11,6 +11,7 @@
     "compliance",
     "hook"
   ],
+  "license": "GPL-3.0-only",
   "scripts": {
     "start": "vite",
     "build": "tsc && vite build",
